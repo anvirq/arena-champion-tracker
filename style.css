@@ -1,0 +1,638 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: Arial, sans-serif;
+  background-color: #0a1428;
+  color: #c8aa6e;
+  margin: 0;
+  padding: 0;
+}
+
+/* Добавляем пустой блок для фиксированной высоты шапки */
+.header-placeholder {
+  height: 130px; /* Уменьшаем высоту шапки */
+  width: 100%;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.fixed-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  background-color: #0a1428;
+  padding: 10px 20px;
+  z-index: 100;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+  width: 100%;
+}
+
+.fixed-header-content {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.header-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 15px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+
+.header-left {
+  flex: 1;
+}
+
+h1 {
+  text-align: center;
+  color: #f0e6d2;
+  flex: 1;
+}
+
+/* Стили для элементов управления в шапке */
+.header-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  justify-content: flex-end;
+}
+
+/* Стили для переключателя языка */
+.language-switcher {
+  display: flex;
+  gap: 5px;
+}
+
+.lang-btn {
+  padding: 5px 10px;
+  background-color: #1e2328;
+  color: #c8aa6e;
+  border: 1px solid #3c3c41;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-weight: bold;
+}
+
+.lang-btn:hover {
+  background-color: #0a1428;
+  border-color: #c8aa6e;
+}
+
+.lang-btn.active {
+  background-color: #0a7e8c;
+  color: #f0e6d2;
+  border-color: #0a7e8c;
+}
+
+/* Стили для кнопок управления */
+.control-btn {
+  width: 35px;
+  height: 35px;
+  background-color: #1e2328;
+  color: #c8aa6e;
+  border: 1px solid #3c3c41;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.control-btn:hover {
+  background-color: #0a1428;
+  border-color: #c8aa6e;
+}
+
+.icon {
+  font-size: 18px;
+}
+
+/* Стили для API ключа (оставлено для совместимости) */
+.api-key-btn {
+  width: 35px;
+  height: 35px;
+  background-color: #1e2328;
+  color: #c8aa6e;
+  border: 1px solid #3c3c41;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.api-key-btn:hover {
+  background-color: #0a1428;
+  border-color: #c8aa6e;
+}
+
+.api-key-icon {
+  font-size: 18px;
+}
+
+/* Стили для модального окна */
+.modal {
+  display: none;
+  position: fixed;
+  z-index: 200;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.7);
+  overflow: auto;
+}
+
+.modal-content {
+  background-color: #1e2328;
+  margin: 7% auto;
+  padding: 20px;
+  border: 1px solid #3c3c41;
+  border-radius: 8px;
+  width: 80%;
+  max-width: 600px;
+  position: relative;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+}
+
+.close-modal, .close-fetch-modal {
+  color: #c8aa6e;
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  font-size: 28px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.close-modal:hover, .close-fetch-modal:hover {
+  color: #f0e6d2;
+}
+
+.modal h2 {
+  margin-bottom: 15px;
+  color: #f0e6d2;
+  text-align: center;
+}
+
+.modal p {
+  margin-bottom: 20px;
+  line-height: 1.5;
+}
+
+.modal a {
+  color: #0a7e8c;
+  text-decoration: none;
+}
+
+.modal a:hover {
+  text-decoration: underline;
+}
+
+.api-key-input-container {
+  display: flex;
+  gap: 10px;
+}
+
+.api-key-input {
+  flex: 1;
+  padding: 10px;
+  background-color: #0a1428;
+  color: #f0e6d2;
+  border: 1px solid #3c3c41;
+  border-radius: 4px;
+}
+
+.save-api-key-btn {
+  padding: 10px 15px;
+  background-color: #0a7e8c;
+  color: #f0e6d2;
+  border: 1px solid #0a7e8c;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-weight: bold;
+}
+
+.save-api-key-btn:hover {
+  background-color: #0a9cac;
+}
+
+/* Обновленные стили для формы игрока в модальном окне */
+.player-data-form {
+  margin-bottom: 20px;
+}
+
+.form-group {
+  display: flex;
+  margin-bottom: 12px;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.form-group label {
+  margin-bottom: 5px;
+  color: #c8aa6e;
+  font-weight: bold;
+}
+
+.player-input {
+  padding: 10px;
+  background-color: #0a1428;
+  color: #f0e6d2;
+  border: 1px solid #3c3c41;
+  border-radius: 4px;
+  width: 100%;
+}
+
+.options-group {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid #3c3c41;
+}
+
+.note-group {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid #3c3c41;
+}
+
+.info-note {
+  font-size: 14px;
+  color: #f0e6d2;
+  background-color: rgba(10, 126, 140, 0.2);
+  padding: 10px;
+  border-radius: 4px;
+  border-left: 3px solid #0a7e8c;
+  line-height: 1.4;
+}
+
+.fetch-actions {
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
+}
+
+.fetch-btn {
+  padding: 12px 25px;
+  background-color: #0a7e8c;
+  color: #f0e6d2;
+  border: 1px solid #0a7e8c;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-weight: bold;
+  font-size: 16px;
+}
+
+.fetch-btn:hover {
+  background-color: #0a9cac;
+}
+
+/* Стили для индикатора прогресса */
+.progress-container {
+  margin-top: 20px;
+}
+
+.progress-bar-container {
+  width: 100%;
+  height: 20px;
+  background-color: #0a1428;
+  border-radius: 10px;
+  overflow: hidden;
+  margin-bottom: 10px;
+  border: 1px solid #3c3c41;
+}
+
+.progress-bar {
+  height: 100%;
+  background-color: #0a7e8c;
+  width: 0%;
+  transition: width 0.3s ease;
+}
+
+.progress-info {
+  text-align: center;
+  font-size: 14px;
+  color: #c8aa6e;
+  margin-top: 5px;
+}
+
+.api-status {
+  text-align: center;
+  font-size: 13px;
+  margin: 5px 0;
+  min-height: 18px;
+}
+
+.api-status.error {
+  color: #e74c3c;
+}
+
+.api-status.success {
+  color: #2ecc71;
+}
+
+.api-status.loading {
+  color: #f39c12;
+}
+
+/* Стили для поиска */
+.search-container {
+  position: relative;
+  width: 300px;
+  max-width: 100%;
+}
+
+#search {
+  width: 100%;
+  padding: 8px 35px 8px 12px;
+  border: 1px solid #3c3c41;
+  background-color: #1e2328;
+  color: #f0e6d2;
+  border-radius: 4px;
+}
+
+.clear-search-btn {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 20px;
+  height: 20px;
+  border: none;
+  background: none;
+  color: #c8aa6e;
+  font-size: 12px;
+  line-height: 1;
+  cursor: pointer;
+  opacity: 0.7;
+  transition: opacity 0.2s;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+}
+
+.clear-search-btn:hover {
+  opacity: 1;
+  background-color: rgba(200, 170, 110, 0.1);
+}
+
+/* Стили для статистики */
+.stats-container {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 8px;
+  gap: 15px;
+  flex-wrap: wrap;
+}
+
+.stat-item {
+  background-color: #1e2328;
+  padding: 6px 12px;
+  border-radius: 4px;
+  border: 1px solid #3c3c41;
+  font-size: 13px;
+}
+
+.stat-item.clickable {
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.stat-item.clickable:hover {
+  border-color: #c8aa6e;
+  transform: translateY(-2px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.stat-item.active {
+  background-color: #0a7e8c;
+  border-color: #0a7e8c;
+}
+
+.stat-item.active .stat-label,
+.stat-item.active .stat-value {
+  color: #f0e6d2;
+}
+
+.stat-label {
+  color: #c8aa6e;
+  margin-right: 5px;
+}
+
+.stat-value {
+  color: #f0e6d2;
+  font-weight: bold;
+}
+
+/* Стили для отображения рангов и прогресса */
+.rank-info {
+  display: flex;
+  align-items: center;
+  margin-top: 6px;
+  gap: 8px;
+}
+
+.rank-badge {
+  font-size: 11px;
+  font-weight: bold;
+  padding: 2px 6px;
+  border-radius: 3px;
+  text-transform: uppercase;
+}
+
+.rank-badge[data-rank="IRON"] {
+  background-color: #515151;
+  color: #c0c0c0;
+}
+
+.rank-badge[data-rank="BRONZE"] {
+  background-color: #7a603a;
+  color: #f0e6d2;
+}
+
+.rank-badge[data-rank="SILVER"] {
+  background-color: #a7a7a7;
+  color: #1e2328;
+}
+
+.rank-badge[data-rank="GOLD"] {
+  background-color: #eabd56;
+  color: #1e2328;
+}
+
+.rank-badge[data-rank="PLATINUM"] {
+  background-color: #3a8a77;
+  color: #f0e6d2;
+}
+
+.rank-badge[data-rank="DIAMOND"] {
+  background-color: #6185c7;
+  color: #f0e6d2;
+}
+
+.rank-badge[data-rank="MASTER"] {
+  background-color: #9d4eb3;
+  color: #f0e6d2;
+}
+
+.rank-progress {
+  font-size: 10px;
+  color: #8b8b8b;
+  white-space: nowrap;
+}
+
+/* Стили для прогресс-баров челленджей */
+.challenge-progress-container {
+  margin-top: 6px;
+  width: 100%;
+  background-color: #0a1428;
+  border-radius: 4px;
+  height: 16px;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid #3c3c41;
+}
+
+.challenge-progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, #0a7e8c 0%, #0a9cac 100%);
+  border-radius: 3px;
+  width: 0%;
+  transition: width 0.5s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  min-width: 0; /* Гарантирует, что ширина может быть 0% */
+  will-change: width; /* Оптимизация для плавных анимаций */
+}
+
+#first-progress-bar {
+  z-index: 1; /* Гарантирует, что прогресс-бар отображается */
+  transform: translateZ(0); /* Применяется аппаратное ускорение */
+}
+
+.challenge-progress-text {
+  position: absolute;
+  width: 100%;
+  text-align: center;
+  font-size: 10px;
+  font-weight: bold;
+  color: #f0e6d2;
+  text-shadow: 0 0 2px rgba(0, 0, 0, 0.7);
+  z-index: 2; /* Гарантирует, что текст всегда поверх прогресс-бара */
+}
+
+.loading {
+  text-align: center;
+  margin: 30px 0;
+  font-size: 18px;
+  color: #f0e6d2;
+}
+
+.champions-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 15px;
+  margin-top: 20px;
+}
+
+.champion-card {
+  border: 1px solid #3c3c41;
+  border-radius: 5px;
+  padding: 10px;
+  text-align: center;
+  background-color: #1e2328;
+  position: relative;
+  transition: transform 0.2s;
+  cursor: pointer;
+}
+
+.champion-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+}
+
+.champion-img {
+  width: 100%;
+  height: 120px;
+  object-fit: cover;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.champion-name {
+  margin-top: 8px;
+  font-size: 14px;
+  color: #f0e6d2;
+}
+
+.champion-status {
+  margin-top: 5px;
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}
+
+.status-icon {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #3c3c41;
+  cursor: pointer;
+  font-size: 12px;
+  line-height: 1;
+  transition: all 0.2s;
+}
+
+.status-icon.played {
+  background-color: #0a7e8c;
+  color: #f0e6d2;
+}
+
+.status-icon.first {
+  background-color: #c8aa6e;
+  color: #1e2328;
+  font-weight: bold;
+}
+
+/* Всплывающие подсказки для иконок статуса */
+.status-icon:hover::before {
+  content: attr(title);
+  position: absolute;
+  bottom: 110%;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: #1e2328;
+  color: #f0e6d2;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  white-space: nowrap;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+  z-index: 10;
+  opacity: 0.9;
+} 

@@ -1,0 +1,71 @@
+# Dependencies
+node_modules/
+
+# Electron (electron-builder output)
+dist/
+
+# Capacitor: web bundle copied into native projects (npm run build:web)
+www/
+
+# Capacitor local state
+.capacitor/
+
+# Secrets and environment
+.env
+.env.*
+!.env.example
+
+# Local user data (app normally stores this in APPDATA; ignore if copied here)
+championData.json
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Editors
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# VS Code — keep shared debug config, ignore personal settings
+.vscode/*
+!.vscode/launch.json
+
+# Android / Gradle (when android/ is added via Capacitor)
+android/.gradle/
+android/build/
+android/app/build/
+android/local.properties
+android/captures/
+android/.cxx/
+*.apk
+*.aab
+*.keystore
+!**/debug.keystore
+
+# iOS / Xcode (if ios/ is added later)
+ios/App/Pods/
+ios/build/
+ios/DerivedData/
+*.xcuserstate
+*.xcworkspace/xcuserdata/
+
+# Test and coverage
+coverage/
+.nyc_output/
+
+# Misc
+tmp/
+temp/
+*.tmp
+.cache/

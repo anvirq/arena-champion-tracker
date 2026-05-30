@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Icon Generator</title>
+  <style>
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      height: 100vh;
+      margin: 0;
+      background-color: #f0f0f0;
+      font-family: Arial, sans-serif;
+    }
+    canvas {
+      border: 1px solid #ccc;
+      margin-bottom: 20px;
+    }
+    button {
+      padding: 10px 20px;
+      background-color: #0a7e8c;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    button:hover {
+      background-color: #095e6a;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="iconCanvas" width="256" height="256"></canvas>
+  <button id="downloadBtn">Скачать PNG</button>
+
+  <script>
+    const canvas = document.getElementById('iconCanvas');
+    const ctx = canvas.getContext('2d');
+    
+    // Фон
+    ctx.fillStyle = '#0a1428';
+    ctx.fillRect(0, 0, 256, 256);
+    
+    // Внешний круг
+    ctx.beginPath();
+    ctx.arc(128, 128, 100, 0, Math.PI * 2);
+    ctx.fillStyle = '#1e2328';
+    ctx.fill();
+    ctx.strokeStyle = '#c8aa6e';
+    ctx.lineWidth = 5;
+    ctx.stroke();
+    
+    // Галочка "играл"
+    ctx.beginPath();
+    ctx.moveTo(90, 128);
+    ctx.lineTo(115, 160);
+    ctx.lineTo(170, 90);
+    ctx.lineWidth = 12;
+    ctx.strokeStyle = '#0a7e8c';
+    ctx.stroke();
+    
+    // Звезда "первое место"
+    ctx.fillStyle = '#c8aa6e';
+    const spikes = 5;
+    const outerRadius = 25;
+    const innerRadius = 12;
+    const centerX = 180;
+    const centerY = 60;
+    
+    let rot = Math.PI / 2 * 3;
+    const step = Math.PI / spikes;
+    
+    ctx.beginPath();
+    ctx.moveTo(centerX, centerY - outerRadius);
+    
+    for (let i = 0; i < spikes; i++) {
+      ctx.lineTo(
+        centerX + Math.cos(rot) * outerRadius,
+        centerY + Math.sin(rot) * outerRadius
+      );
+      rot += step;
+      
+      ctx.lineTo(
+        centerX + Math.cos(rot) * innerRadius,
+        centerY + Math.sin(rot) * innerRadius
+      );
+      rot += step;
+    }
+    
+    ctx.lineTo(centerX, centerY - outerRadius);
+    ctx.closePath();
+    ctx.fill();
+    
+    // Кнопка скачивания
+    document.getElementById('downloadBtn').addEventListener('click', function() {
+      const dataUrl = canvas.toDataURL('image/png');
+      const link = document.createElement('a');
+      link.download = 'app-icon.png';
+      link.href = dataUrl;
+      link.click();
+    });
+  </script>
+</body>
+</html> 

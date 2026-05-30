@@ -1,0 +1,32 @@
+{
+  "appId": "com.arenachampiontracker.app",
+  "appName": "Arena Champion Tracker",
+  "webDir": "www",
+  "bundledWebRuntime": false,
+  "server": {
+    "hostname": "app",
+    "androidScheme": "https"
+  },
+  "android": {
+    "backgroundColor": "#0a1428",
+    "allowMixedContent": true,
+    "captureInput": true,
+    "webContentsDebuggingEnabled": true
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 1500,
+      "launchAutoHide": true,
+      "backgroundColor": "#0a1428",
+      "androidSplashResourceName": "splash",
+      "androidScaleType": "CENTER_CROP",
+      "showSpinner": false,
+      "splashFullScreen": true,
+      "splashImmersive": true
+    },
+    "LocalNotifications": {
+      "smallIcon": "ic_stat_icon_config_sample",
+      "iconColor": "#0a7e8c"
+    }
+  }
+} 

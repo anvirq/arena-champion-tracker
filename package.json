@@ -1,0 +1,58 @@
+{
+  "name": "arena-champion-tracker",
+  "version": "1.0.0",
+  "description": "Arena Champion Challenges Tracker",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder",
+    "build:web": "mkdir -p www && cp -r index-mobile.html style.css renderer-mobile.js assets www/ && mv www/index-mobile.html www/index.html && mv www/renderer-mobile.js www/renderer.js",
+    "cap:init": "npm run build:web && npx cap init ArenaChampionTracker com.arenachampiontracker.app --web-dir www",
+    "cap:add": "npx cap add android",
+    "cap:copy": "npm run build:web && npx cap copy android",
+    "cap:open": "npx cap open android",
+    "cap:setup": "node setup-android.js",
+    "cap:icons": "node generate-android-icons.js",
+    "cap:build": "npm run build:web && npx cap copy android && node setup-android.js && npm run cap:icons && npx cap open android",
+    "android:prepare": "npm install @capacitor/core @capacitor/cli @capacitor/android && npm run cap:init && npm run cap:add && npm run cap:setup",
+    "android:dev": "npm run cap:copy && npm run cap:open",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "league",
+    "champions",
+    "tracker",
+    "arena"
+  ],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "canvas": "^2.11.2",
+    "electron": "^28.1.0",
+    "electron-builder": "^24.9.1"
+  },
+  "dependencies": {
+    "@capacitor/android": "^5.5.0",
+    "@capacitor/cli": "^5.5.0",
+    "@capacitor/core": "^5.5.0"
+  },
+  "build": {
+    "appId": "com.arenachampiontracker.app",
+    "productName": "Arena Champion Challenges Tracker",
+    "directories": {
+      "output": "dist"
+    },
+    "win": {
+      "target": [
+        "nsis"
+      ],
+      "icon": "assets/icon.png"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    }
+  }
+}

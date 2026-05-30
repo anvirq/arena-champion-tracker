@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Arena Champion Challenges Tracker</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    /* Мобильные стили */
+    body {
+      overscroll-behavior: none;
+      touch-action: manipulation;
+    }
+    .stats-container {
+      flex-wrap: wrap;
+    }
+    .stat-item {
+      width: calc(50% - 10px);
+      margin-bottom: 10px;
+    }
+    .champions-grid {
+      grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    }
+    .champion-card {
+      padding: 6px;
+    }
+    .champion-img {
+      height: 100px;
+    }
+    .champion-name {
+      font-size: 12px;
+    }
+    /* Адаптация к safe area insets для устройств с вырезами и закругленными краями */
+    .fixed-header {
+      padding-top: env(safe-area-inset-top);
+      padding-left: env(safe-area-inset-left);
+      padding-right: env(safe-area-inset-right);
+    }
+    .container {
+      padding-left: calc(env(safe-area-inset-left) + 10px);
+      padding-right: calc(env(safe-area-inset-right) + 10px);
+      padding-bottom: calc(env(safe-area-inset-bottom) + 10px);
+    }
+    /* Улучшение тапабельности элементов для мобильных */
+    .stat-item.clickable, .control-btn, .lang-btn, .status-icon {
+      min-height: 44px;
+    }
+    .lang-btn, .control-btn {
+      padding: 10px 15px;
+    }
+    .clear-search-btn {
+      width: 30px;
+      height: 30px;
+    }
+    #search {
+      height: 44px;
+      font-size: 16px;
+    }
+  </style>
+</head>
+<body>
+  <!-- Фиксированная шапка -->
+  <div class="fixed-header">
+    <div class="fixed-header-content">
+      <div class="header-top">
+        <div class="header-left"></div>
+        
+        <div class="search-container">
+          <input type="text" id="search" placeholder="Поиск чемпиона...">
+          <button id="clear-search" class="clear-search-btn" title="Очистить поиск">✕</button>
+        </div>
+        
+        <div class="header-controls">
+          <div class="language-switcher">
+            <button id="lang-ru" class="lang-btn active">RU</button>
+            <button id="lang-en" class="lang-btn">EN</button>
+          </div>
+          <button id="fetch-data-modal-btn" class="control-btn" title="Загрузить данные">
+            <span class="icon">📊</span>
+          </button>
+          <button id="api-key-btn" class="control-btn" title="API Key">
+            <span class="icon">🔑</span>
+          </button>
+        </div>
+      </div>
+      
+      <div id="stats-container" class="stats-container">
+        <div class="stat-item clickable" id="filter-all">
+          <span class="stat-label" data-lang-key="total_champions">Всего чемпионов:</span>
+          <span id="total-champions" class="stat-value">0</span>
+        </div>
+        <div class="stat-item clickable" id="filter-played">
+          <span class="stat-label" data-lang-key="total_played">Играл:</span>
+          <span id="total-played" class="stat-value">0</span>
+          <div class="rank-info">
+            <span id="played-rank" class="rank-badge">IRON</span>
+            <span id="played-progress" class="rank-progress"></span>
+          </div>
+          <div class="challenge-progress-container">
+            <div id="played-progress-bar" class="challenge-progress-bar">
+              <span id="played-progress-text" class="challenge-progress-text">0/0</span>
+            </div>
+          </div>
+        </div>
+        <div class="stat-item clickable" id="filter-first">
+          <span class="stat-label" data-lang-key="total_first">Первое место:</span>
+          <span id="total-first" class="stat-value">0</span>
+          <div class="rank-info">
+            <span id="first-rank" class="rank-badge">IRON</span>
+            <span id="first-progress" class="rank-progress"></span>
+          </div>
+          <div class="challenge-progress-container">
+            <div id="first-progress-bar" class="challenge-progress-bar">
+              <span id="first-progress-text" class="challenge-progress-text">0/0</span>
+            </div>
+          </div>
+        </div>
+        <div class="stat-item clickable" id="filter-not-played">
+          <span class="stat-label" data-lang-key="not_played">Не играл:</span>
+          <span id="total-not-played" class="stat-value">0</span>
+        </div>
+      </div>
+      
+      <div id="api-status" class="api-status"></div>
+    </div>
+  </div>
+  
+  <!-- Плейсхолдер для отступа от фиксированной шапки -->
+  <div class="header-placeholder"></div>
+  
+  <!-- Основной контент -->
+  <div class="container">
+    <div id="loading" class="loading" data-lang-key="loading">Загрузка списка чемпионов...</div>
+    <div id="champions-container" class="champions-grid"></div>
+  </div>
+  
+  <!-- Модальное окно для API ключа -->
+  <div id="api-key-modal" class="modal">
+    <div class="modal-content">
+      <span class="close-modal">&times;</span>
+      <h2 data-lang-key="api_key_title">Настройка API ключа</h2>
+      <p data-lang-key="api_key_description">Для получения данных из Riot Games API вам нужен персональный ключ. Вы можете получить его на сайте <a href="https://developer.riotgames.com/" target="_blank">developer.riotgames.com</a>.</p>
+      <div class="api-key-input-container">
+        <input type="text" id="api-key-input" placeholder="RGAPI-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" class="api-key-input">
+        <button id="save-api-key" class="save-api-key-btn" data-lang-key="save_api_key">Сохранить</button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Модальное окно для загрузки данных игрока -->
+  <div id="fetch-data-modal" class="modal">
+    <div class="modal-content">
+      <span class="close-fetch-modal">&times;</span>
+      <h2 data-lang-key="fetch_data_title">Загрузка данных</h2>
+      <p data-lang-key="fetch_data_description">Введите данные вашего аккаунта League of Legends для загрузки статистики по чемпионам в режиме Арена.</p>
+      
+      <div class="player-data-form">
+        <div class="form-group">
+          <label for="player-name" data-lang-key="summoner_name_label">Имя призывателя:</label>
+          <input type="text" id="player-name" placeholder="Summoner Name" class="player-input">
+        </div>
+        
+        <div class="form-group">
+          <label for="player-tag" data-lang-key="tag_label">Тег:</label>
+          <input type="text" id="player-tag" placeholder="#TAG" class="player-input">
+        </div>
+        
+        <div class="form-group">
+          <label for="player-region" data-lang-key="region_label">Регион:</label>
+          <select id="player-region" class="player-input">
+            <option value="euw1">EUW</option>
+            <option value="eun1">EUNE</option>
+            <option value="na1">NA</option>
+            <option value="kr">KR</option>
+            <option value="br1">BR</option>
+            <option value="jp1">JP</option>
+            <option value="ru">RU</option>
+            <option value="tr1">TR</option>
+            <option value="la1">LAN</option>
+            <option value="la2">LAS</option>
+            <option value="oc1">OCE</option>
+          </select>
+        </div>
+        
+        <div class="fetch-actions">
+          <button id="fetch-data-btn" class="fetch-btn" data-lang-key="fetch_data">Загрузить данные</button>
+        </div>
+      </div>
+      
+      <div class="progress-container" style="display: none;">
+        <div class="progress-bar-container">
+          <div id="progress-bar" class="progress-bar"></div>
+        </div>
+        <div id="progress-info" class="progress-info"></div>
+      </div>
+    </div>
+  </div>
+  
+  <script src="renderer-mobile.js"></script>
+</body>
+</html> 
