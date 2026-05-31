@@ -4,6 +4,10 @@ A desktop and mobile app for tracking League of Legends **Arena** champion progr
 
 Built with Electron (Windows) and Capacitor (Android).
 
+<p align="center">
+  <img src="assets/Screenshot.jpg" alt="Arena Champion Challenges Tracker — champion grid, challenge progress, and filters" width="800">
+</p>
+
 ## Features
 
 - Champion grid with images loaded from Riot Data Dragon
