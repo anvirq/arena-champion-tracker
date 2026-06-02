@@ -1,8 +1,8 @@
 # Arena Champion Challenges Tracker
 
-A desktop and mobile app for tracking League of Legends **Arena** champion progress: mark champions you've played and those you've won with, follow challenge ranks, and optionally import stats from the Riot Games API.
+A Windows desktop app for tracking League of Legends **Arena** champion progress: mark champions you've played and those you've won with, follow challenge ranks, and optionally import stats from the Riot Games API.
 
-Built with Electron (Windows) and Capacitor (Android).
+> **Android version is in development**
 
 <p align="center">
   <img src="assets/Screenshot.jpg" alt="Arena Champion Challenges Tracker — champion grid, challenge progress, and filters" width="800">
@@ -22,66 +22,6 @@ Built with Electron (Windows) and Capacitor (Android).
 - RU / EN interface
 - Progress saved between sessions
 
-## Requirements
-
-- [Node.js](https://nodejs.org/) (LTS recommended)
-- For the desktop app: Windows, macOS, or Linux
-- For Android builds: [Android Studio](https://developer.android.com/studio) with SDK and JDK
-
-## Getting Started (Desktop)
-
-1. Clone the repository
-2. Install dependencies:
-
-```bash
-npm install
-```
-
-3. Start the app:
-
-```bash
-npm start
-```
-
-## Build Desktop Installer
-
-Create a Windows installer (NSIS):
-
-```bash
-npm run build
-```
-
-Output is written to the `dist/` folder.
-
-## Android
-
-First-time setup (initializes Capacitor, adds the Android platform, and applies project settings):
-
-```bash
-npm run android:prepare
-```
-
-Day-to-day development (copy web assets and open Android Studio):
-
-```bash
-npm run android:dev
-```
-
-Full build pipeline (web assets, copy, setup, icons, open Android Studio):
-
-```bash
-npm run cap:build
-```
-
-Other useful scripts:
-
-| Script | Description |
-|--------|-------------|
-| `npm run build:web` | Build web assets into `www/` |
-| `npm run cap:copy` | Copy web assets to the Android project |
-| `npm run cap:icons` | Generate Android launcher icons |
-| `npm run cap:open` | Open the project in Android Studio |
-
 ## Usage
 
 ### Manual tracking
@@ -98,34 +38,61 @@ Other useful scripts:
 2. Click the **🔑** button and save your key
 3. Click the **📊** button, enter summoner name, tag, and region, then fetch data
 
-The app loads Arena matches starting from the mode launch date (February 7, 2024) and updates your champion progress automatically.
+## Development
 
-Supported regions: EUW, EUNE, NA, KR, BR, JP, RU, TR, LAN, LAS, OCE.
+### Prerequisites
 
-### Challenge ranks
+- [Node.js](https://nodejs.org/) (LTS)
+- Android builds: [Android Studio](https://developer.android.com/studio) with SDK and JDK
 
-Progress is tracked separately for champions played and first-place finishes:
+### Run from source
 
-| Rank | Champions played | First place |
-|------|------------------:|------------:|
-| Iron | 8 | 3 |
-| Bronze | 15 | 6 |
-| Silver | 30 | 12 |
-| Gold | 55 | 20 |
-| Platinum | 90 | 32 |
-| Diamond | 135 | 45 |
-| Master | 168 | 60 |
+```bash
+git clone https://github.com/anvirq/arena-champion-tracker.git
+cd arena-champion-tracker
+npm install
+npm start
+```
 
-## Data Storage
+### Build Windows
 
-- **Desktop (Electron):** `%APPDATA%\League Champion Tracker\championData.json` on Windows (similar paths on macOS/Linux)
-- **Android:** browser `localStorage` inside the app
+```bash
+npm run build              # installer + portable → dist/
+npm run build:installer    # NSIS setup only
+npm run build:portable     # portable .exe only
+```
 
-The file also stores UI language and your Riot API key.
+### Build Android
+
+First-time setup:
+
+```bash
+npm run android:prepare
+```
+
+Day-to-day development:
+
+```bash
+npm run android:dev
+```
+
+Full pipeline (web assets, copy, setup, icons, open Android Studio):
+
+```bash
+npm run cap:build
+```
+
+| Script | Description |
+|--------|-------------|
+| `npm run build:web` | Build web assets into `www/` |
+| `npm run cap:copy` | Copy web assets to the Android project |
+| `npm run cap:icons` | Generate Android launcher icons |
+| `npm run cap:open` | Open the project in Android Studio |
+
 
 ## Tech Stack
 
-- Electron + electron-builder
+- Electron + electron-builder (Windows desktop)
 - Capacitor (Android)
 - Riot Data Dragon (champion data and images)
 - Riot Games API (match history)

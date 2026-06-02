@@ -240,15 +240,17 @@ function getFallbackChampions() {
   }
 }
 
-// Путь к файлу данных
-const userDataPath = path.join(
-  process.env.APPDATA || 
-  (process.platform === 'darwin' ? 
-    process.env.HOME + '/Library/Preferences' : 
-    process.env.HOME + '/.local/share'),
-  'League Champion Tracker', 
-  'championData.json'
-);
+// Путь к файлу данных (portable: рядом с exe; установленная версия: APPDATA)
+const userDataPath = process.env.PORTABLE_EXECUTABLE_DIR
+  ? path.join(process.env.PORTABLE_EXECUTABLE_DIR, 'data', 'championData.json')
+  : path.join(
+      process.env.APPDATA ||
+      (process.platform === 'darwin'
+        ? process.env.HOME + '/Library/Preferences'
+        : process.env.HOME + '/.local/share'),
+      'League Champion Tracker',
+      'championData.json'
+    );
 
 // Загрузка данных пользователя
 function loadUserData() {
