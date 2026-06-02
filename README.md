@@ -2,6 +2,19 @@
 
 A Windows desktop app for tracking League of Legends **Arena** champion progress: mark champions you've played and those you've won with, follow challenge ranks, and optionally import stats from the Riot Games API.
 
+## Why this exists
+
+In **Legacy → Challenges**, League of Legends has two Arena progressions that track unique champions:
+
+| In-game challenge | What it tracks |
+|-------------------|----------------|
+| **Arena Champion Ocean** — *Play Arena games with different champions* | Champions you've played at least one Arena game with |
+| **Adapt to All Situations** (*Arena God*) — *Place first in Arena games with different champions* | Champions you've finished 1st with |
+
+The client only shows your tier and total count for each — not **which** champions count. During champion select you can't see who you still need for either challenge.
+
+This app shows the full roster, filters (played / first place / not played), challenge rank progress, and optional import from match history via the Riot API.
+
 <p align="center">
   <img src="assets/Screenshot.jpg" alt="Arena Champion Challenges Tracker — champion grid, challenge progress, and filters" width="800">
 </p>
