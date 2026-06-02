@@ -1,19 +1,27 @@
-
-// Загрузка данных о чемпионах
 const fs = require('fs');
 const path = require('path');
 const https = require('https');
 
 let champions = [];
 let userChampionsData = {};
-let currentFilter = 'all'; // текущий выбранный фильтр
-let currentLanguage = 'ru'; // текущий язык интерфейса
-let riotApiKey = ''; // ключ Riot Games API
+let currentFilter = 'all';
+let currentLanguage = 'ru';
+let riotApiKey = '';
 
-// Карта соответствия ID чемпионов и их ключей в API
 let championIdMap = {};
 
-// Пороги для челенджей по чемпионам
+// Arena queue IDs (1700 = standard, 1710 = 16-player lobby, etc.)
+const ARENA_QUEUE_IDS = [1700, 1710, 1720, 1730];
+
+function normalizeChampionKey(key) {
+  if (!key) return key;
+  const k = String(key).toLowerCase();
+  if (championIdMap[k]) return championIdMap[k];
+  const stripped = k.replace(/[\s'&.]/g, '');
+  if (stripped !== k && championIdMap[stripped]) return championIdMap[stripped];
+  return k;
+}
+
 const championsChallengeThresholds = {
   "IRON": 8,
   "BRONZE": 15,
@@ -24,7 +32,6 @@ const championsChallengeThresholds = {
   "MASTER": 168
 };
 
-//#region Пороги для челенджей по первым местам
 const firstPlaceChallengeThresholds = {
   "IRON": 3,
   "BRONZE": 6,
@@ -35,12 +42,8 @@ const firstPlaceChallengeThresholds = {
   "MASTER": 60
 };
 
-//#endregion
-
-// Порядок рангов для сравнения
 const rankOrder = ["IRON", "BRONZE", "SILVER", "GOLD", "PLATINUM", "DIAMOND", "MASTER"];
 
-// Словари для переводов
 const translations = {
   ru: {
     app_title: "Arena Champion Challenges Tracker",
@@ -86,7 +89,6 @@ const translations = {
     page: "Страница",
     rate_limit_exceeded: "Превышен лимит запросов, ожидание",
     api_key_error: "Ошибка API ключа",
-    // Добавляем названия рангов
     rank_iron: "ЖЕЛЕЗО",
     rank_bronze: "БРОНЗА",
     rank_silver: "СЕРЕБРО",
@@ -139,7 +141,6 @@ const translations = {
     page: "Page",
     rate_limit_exceeded: "Rate limit exceeded, waiting",
     api_key_error: "API key error",
-    // Adding rank names
     rank_iron: "IRON",
     rank_bronze: "BRONZE",
     rank_silver: "SILVER",
@@ -150,10 +151,8 @@ const translations = {
   }
 };
 
-// Функция для получения данных о чемпионах с DataDragon API
 function fetchChampionsData() {
   return new Promise((resolve, reject) => {
-    // Получаем последнюю версию API
     https.get('https://ddragon.leagueoflegends.com/api/versions.json', (res) => {
       let data = '';
       
@@ -166,7 +165,6 @@ function fetchChampionsData() {
           const versions = JSON.parse(data);
           const latestVersion = versions[0];
           
-          // Получаем данные о чемпионах в зависимости от текущего языка
           const langCode = currentLanguage === 'ru' ? 'ru_RU' : 'en_US';
           
           https.get(`https://ddragon.leagueoflegends.com/cdn/${latestVersion}/data/${langCode}/champion.json`, (champRes) => {
@@ -186,12 +184,10 @@ function fetchChampionsData() {
                     image: `https://ddragon.leagueoflegends.com/cdn/img/champion/splash/${champion.id}_0.jpg`
                   };
                 });
-                // Сортируем чемпионов по имени
                 champsList.sort((a, b) => a.name.localeCompare(b.name, currentLanguage === 'ru' ? 'ru' : 'en'));
                 resolve(champsList);
               } catch (error) {
                 console.error('Ошибка при обработке данных о чемпионах:', error);
-                // Используем упрощенный список в случае ошибки
                 resolve(getFallbackChampions());
               }
             });
@@ -211,7 +207,6 @@ function fetchChampionsData() {
   });
 }
 
-// Резервный список чемпионов (используется при отсутствии соединения)
 function getFallbackChampions() {
   if (currentLanguage === 'ru') {
     const list = [
@@ -223,7 +218,6 @@ function getFallbackChampions() {
       { id: 'yasuo', name: 'Ясуо', image: 'https://ddragon.leagueoflegends.com/cdn/img/champion/splash/Yasuo_0.jpg' },
       { id: 'zed', name: 'Зед', image: 'https://ddragon.leagueoflegends.com/cdn/img/champion/splash/Zed_0.jpg' }
     ];
-    // Сортируем резервный список по имени
     return list.sort((a, b) => a.name.localeCompare(b.name, 'ru'));
   } else {
     const list = [
@@ -235,12 +229,11 @@ function getFallbackChampions() {
       { id: 'yasuo', name: 'Yasuo', image: 'https://ddragon.leagueoflegends.com/cdn/img/champion/splash/Yasuo_0.jpg' },
       { id: 'zed', name: 'Zed', image: 'https://ddragon.leagueoflegends.com/cdn/img/champion/splash/Zed_0.jpg' }
     ];
-    // Сортируем резервный список по имени
     return list.sort((a, b) => a.name.localeCompare(b.name, 'en'));
   }
 }
 
-// Путь к файлу данных (portable: рядом с exe; установленная версия: APPDATA)
+// Portable build: data/ next to exe; installed build: APPDATA
 const userDataPath = process.env.PORTABLE_EXECUTABLE_DIR
   ? path.join(process.env.PORTABLE_EXECUTABLE_DIR, 'data', 'championData.json')
   : path.join(
@@ -252,7 +245,6 @@ const userDataPath = process.env.PORTABLE_EXECUTABLE_DIR
       'championData.json'
     );
 
-// Загрузка данных пользователя
 function loadUserData() {
   try {
     console.log(`Попытка загрузки данных из: ${userDataPath}`);
@@ -260,13 +252,11 @@ function loadUserData() {
       const data = fs.readFileSync(userDataPath, 'utf8');
       userChampionsData = JSON.parse(data);
       
-      // Загружаем сохраненный язык, если есть
       if (userChampionsData._settings && userChampionsData._settings.language) {
         currentLanguage = userChampionsData._settings.language;
         updateLanguageBtns();
       }
       
-      // Загружаем API ключ, если он сохранен
       if (userChampionsData._settings && userChampionsData._settings.apiKey) {
         riotApiKey = userChampionsData._settings.apiKey;
       }
@@ -281,33 +271,26 @@ function loadUserData() {
   }
 }
 
-// Функция для создания вложенных директорий
 function mkdirRecursive(dirPath) {
-  // Проверяем, существует ли директория
   if (fs.existsSync(dirPath)) {
     return;
   }
   
-  // Пробуем создать с recursive (для Node.js 10+)
   try {
     fs.mkdirSync(dirPath, { recursive: true });
     console.log(`Создана директория: ${dirPath}`);
     return;
   } catch (error) {
-    // Если не поддерживается recursive или возникла другая ошибка
     console.error('Ошибка при создании директории с recursive:', error);
     
-    // Ручная рекурсия для создания вложенных папок
+    // Manual recursion for Node.js without { recursive: true }
     try {
-      // Получаем родительскую директорию
       const parentDir = path.dirname(dirPath);
       
-      // Рекурсивно создаем родительскую директорию, если она не существует
       if (!fs.existsSync(parentDir)) {
         mkdirRecursive(parentDir);
       }
       
-      // Создаем текущую директорию
       fs.mkdirSync(dirPath);
       console.log(`Создана директория (вручную): ${dirPath}`);
     } catch (manualError) {
@@ -316,21 +299,17 @@ function mkdirRecursive(dirPath) {
   }
 }
 
-// Сохранение данных пользователя
 function saveUserData() {
   try {
-    // Создаем директорию перед сохранением, если она не существует
     const dirPath = path.dirname(userDataPath);
     mkdirRecursive(dirPath);
     
-    // Сохраняем настройки вместе с данными
     if (!userChampionsData._settings) {
       userChampionsData._settings = {};
     }
     userChampionsData._settings.language = currentLanguage;
     userChampionsData._settings.apiKey = riotApiKey;
     
-    // Сохраняем данные в файл
     fs.writeFileSync(userDataPath, JSON.stringify(userChampionsData, null, 2), 'utf8');
     console.log(`Данные сохранены в: ${userDataPath}`);
   } catch (error) {
@@ -339,27 +318,22 @@ function saveUserData() {
   }
 }
 
-// Расчет ранга и прогресса для челенджа
 function calculateRankAndProgress(count, thresholds) {
-  // Определяем текущий ранг
   let currentRank = "IRON";
   let nextRank = "BRONZE";
   let progress = 0;
   
-  // Проходим по всем рангам в порядке возрастания
   for (let i = rankOrder.length - 1; i >= 0; i--) {
     const rank = rankOrder[i];
     const threshold = thresholds[rank];
     
     if (count >= threshold) {
       currentRank = rank;
-      // Если это последний ранг, то следующего нет
       nextRank = i === rankOrder.length - 1 ? null : rankOrder[i + 1];
       break;
     }
   }
   
-  // Рассчитываем прогресс до следующего ранга
   if (nextRank) {
     const currentThreshold = thresholds[currentRank];
     const nextThreshold = thresholds[nextRank];
@@ -368,7 +342,6 @@ function calculateRankAndProgress(count, thresholds) {
     progress = 1 - (remaining / total);
     progress = Math.max(0, Math.min(1, progress));
   } else {
-    // Если достигнут максимальный ранг
     progress = 1;
   }
   
@@ -381,7 +354,6 @@ function calculateRankAndProgress(count, thresholds) {
   };
 }
 
-// Получение перевода ранга с запасным вариантом
 function getRankTranslation(rank) {
   if (!rank) return '';
   
@@ -389,34 +361,26 @@ function getRankTranslation(rank) {
   return translations[currentLanguage][translationKey] || rank;
 }
 
-// Обновление отображения рангов и прогресса
 function updateRanksDisplay() {
-  // Получаем количество играных и первое место чемпионов
   const playedCount = Object.values(userChampionsData).filter(champion => champion.played).length;
   const firstCount = Object.values(userChampionsData).filter(champion => champion.first).length;
   
-  // Рассчитываем ранги и прогресс
   const playedRankInfo = calculateRankAndProgress(playedCount, championsChallengeThresholds);
   const firstRankInfo = calculateRankAndProgress(firstCount, firstPlaceChallengeThresholds);
   
-  // Обновляем элементы на странице
   const playedRankElement = document.getElementById('played-rank');
   const playedProgressElement = document.getElementById('played-progress');
   const firstRankElement = document.getElementById('first-rank');
   const firstProgressElement = document.getElementById('first-progress');
   
-  // Переводим ранги и обновляем элементы
   const playedRankTranslated = getRankTranslation(playedRankInfo.rank);
   const firstRankTranslated = getRankTranslation(firstRankInfo.rank);
   
-  // Обновляем ранги
   playedRankElement.textContent = playedRankTranslated;
-  playedRankElement.setAttribute('data-rank', playedRankInfo.rank); // Оставляем оригинальное имя для CSS
+  playedRankElement.setAttribute('data-rank', playedRankInfo.rank); // CSS rank colors
   
   firstRankElement.textContent = firstRankTranslated;
-  firstRankElement.setAttribute('data-rank', firstRankInfo.rank); // Оставляем оригинальное имя для CSS
-  
-  // Обновляем прогресс-бары
+  firstRankElement.setAttribute('data-rank', firstRankInfo.rank);
   const playedProgressBar = document.getElementById('played-progress-bar');
   const playedProgressText = document.getElementById('played-progress-text');
   const firstProgressBar = document.getElementById('first-progress-bar');
@@ -430,14 +394,11 @@ function updateRanksDisplay() {
     return;
   }
   
-  // Обновляем информацию о прогрессе для "играл"
   if (playedRankInfo.nextRank) {
-    // Получаем перевод для следующего ранга
     const nextRankTranslated = getRankTranslation(playedRankInfo.nextRank);
     const nextRankText = translations[currentLanguage].next_rank.replace('{rank}', nextRankTranslated);
     playedProgressElement.textContent = `${nextRankText} ${playedRankInfo.remaining}`;
     
-    // Обновляем визуальный прогресс-бар
     const currentThreshold = championsChallengeThresholds[playedRankInfo.rank];
     const nextThreshold = championsChallengeThresholds[playedRankInfo.nextRank];
     const progressPercent = Math.min(100, (playedCount - currentThreshold) / (nextThreshold - currentThreshold) * 100);
@@ -454,19 +415,15 @@ function updateRanksDisplay() {
   } else {
     playedProgressElement.textContent = translations[currentLanguage].rank_completed;
     
-    // Если челлендж завершен, показываем 100% в прогресс-баре
     playedProgressBar.style.width = '100%';
     playedProgressText.textContent = translations[currentLanguage].rank_completed;
   }
   
-  // Обновляем информацию о прогрессе для "первое место"
   if (firstRankInfo.nextRank) {
-    // Получаем перевод для следующего ранга
     const nextRankTranslated = getRankTranslation(firstRankInfo.nextRank);
     const nextRankText = translations[currentLanguage].next_rank.replace('{rank}', nextRankTranslated);
     firstProgressElement.textContent = `${nextRankText} ${firstRankInfo.remaining}`;
     
-    // Обновляем визуальный прогресс-бар
     const currentThreshold = firstPlaceChallengeThresholds[firstRankInfo.rank];
     const nextThreshold = firstPlaceChallengeThresholds[firstRankInfo.nextRank];
     const progressPercent = Math.min(100, (firstCount - currentThreshold) / (nextThreshold - currentThreshold) * 100);
@@ -479,31 +436,26 @@ function updateRanksDisplay() {
       style: firstProgressBar.style.width
     });
     
-    // Принудительное обновление стиля ширины прогресс-бара
-    firstProgressBar.style.width = '0%'; // Сначала сбрасываем
+    // Force reflow so width transition applies reliably
+    firstProgressBar.style.width = '0%';
     setTimeout(() => {
-      firstProgressBar.style.width = `${progressPercent}%`; // Затем устанавливаем новое значение
+      firstProgressBar.style.width = `${progressPercent}%`;
       firstProgressText.textContent = `${firstCount}/${nextThreshold}`;
     }, 10);
   } else {
     firstProgressElement.textContent = translations[currentLanguage].rank_completed;
     
-    // Если челлендж завершен, показываем 100% в прогресс-баре
     firstProgressBar.style.width = '100%';
     firstProgressText.textContent = translations[currentLanguage].rank_completed;
   }
   
-  // Обновляем цвета прогресс-баров в зависимости от ранга
   updateProgressBarColors(playedProgressBar, playedRankInfo.rank);
   updateProgressBarColors(firstProgressBar, firstRankInfo.rank);
 }
 
-// Обновление цветов прогресс-баров в зависимости от ранга
 function updateProgressBarColors(progressBar, rank) {
-  // Удаляем предыдущие классы цветов
   progressBar.classList.remove('rank-iron', 'rank-bronze', 'rank-silver', 'rank-gold', 'rank-platinum', 'rank-diamond', 'rank-master');
   
-  // Применяем соответствующий цвет
   switch (rank) {
     case 'IRON':
       progressBar.style.background = 'linear-gradient(90deg, #515151 0%, #6e6e6e 100%)';
@@ -531,7 +483,6 @@ function updateProgressBarColors(progressBar, rank) {
   }
 }
 
-// Обновление статистики
 function updateStats() {
   const totalChampions = champions.length;
   const playedChampions = champions.filter(champion => champion.played).length;
@@ -543,39 +494,27 @@ function updateStats() {
   document.getElementById('total-first').textContent = firstPlaceChampions;
   document.getElementById('total-not-played').textContent = notPlayedChampions;
   
-  // Обновляем отображение рангов
   updateRanksDisplay();
-  
-  // Обновляем активный фильтр
   updateActiveFilterStat();
 }
 
-// Обновление активного фильтра в статистике
 function updateActiveFilterStat() {
-  // Сначала удаляем активный класс у всех элементов статистики
   document.querySelectorAll('.stat-item').forEach(item => {
     item.classList.remove('active');
   });
   
-  // Добавляем активный класс к текущему фильтру
   const activeFilterElement = document.getElementById(`filter-${currentFilter}`);
   if (activeFilterElement) {
     activeFilterElement.classList.add('active');
   }
 }
 
-// Фильтрация чемпионов
 function filterChampions(filterType, searchQuery = '') {
-  // Обновляем текущий фильтр
   currentFilter = filterType;
-  
-  // Обновляем статус активного фильтра
   updateActiveFilterStat();
   
-  // Применяем фильтр и поиск
   let filteredChampions = champions;
   
-  // Фильтрация по типу
   switch (filterType) {
     case 'played':
       filteredChampions = champions.filter(c => c.played);
@@ -588,11 +527,9 @@ function filterChampions(filterType, searchQuery = '') {
       break;
     case 'all':
     default:
-      // Нет фильтрации, использовать все чемпионы
       break;
   }
   
-  // Применение поиска, если есть
   if (searchQuery.trim() !== '') {
     filteredChampions = filteredChampions.filter(champion => 
       champion.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -602,26 +539,20 @@ function filterChampions(filterType, searchQuery = '') {
   renderChampionsFromArray(filteredChampions);
 }
 
-// Инициализация чемпионов
 async function initChampions() {
   const loadingElement = document.getElementById('loading');
   loadingElement.style.display = 'block';
   
   document.getElementById('champions-container').innerHTML = '';
   
-  // Загружаем данные о чемпионах
   champions = await fetchChampionsData();
-  
-  // Загружаем пользовательские данные
   loadUserData();
   
-  // Обновляем язык интерфейса
   if (userChampionsData._settings && userChampionsData._settings.language) {
     currentLanguage = userChampionsData._settings.language;
     updateUILanguage();
   }
   
-  // Применяем пользовательские данные к списку чемпионов
   champions.forEach(champion => {
     if (userChampionsData[champion.id]) {
       champion.played = userChampionsData[champion.id].played || false;
@@ -632,21 +563,15 @@ async function initChampions() {
     }
   });
   
-  // Обновляем статистику
   updateStats();
-  
-  // Рендерим список чемпионов с фильтром по умолчанию
   filterChampions(currentFilter);
   
   loadingElement.style.display = 'none';
 }
 
-// Обновление UI языка
 function updateUILanguage() {
-  // Заголовок приложения
   document.title = translations[currentLanguage].app_title;
   
-  // Обновляем все тексты по data-lang-key
   document.querySelectorAll('[data-lang-key]').forEach(element => {
     const key = element.getAttribute('data-lang-key');
     if (translations[currentLanguage][key]) {
@@ -654,31 +579,21 @@ function updateUILanguage() {
     }
   });
   
-  // Обновляем плейсхолдеры и подсказки
   document.getElementById('search').placeholder = translations[currentLanguage].search_placeholder;
   document.getElementById('clear-search').title = translations[currentLanguage].clear_search;
-  
-  // Обновляем placeholder в форме API ключа
   document.getElementById('api-key-input').placeholder = translations[currentLanguage].api_key_placeholder;
-  
-  // Обновляем placeholder в форме игрока
   document.getElementById('player-name').placeholder = translations[currentLanguage].summoner_name_placeholder;
   document.getElementById('player-tag').placeholder = translations[currentLanguage].tag_placeholder;
   
-  // Обновляем статус кнопок языка
   updateLanguageBtns();
-  
-  // Обновляем отображение рангов
   updateRanksDisplay();
   
-  // Обновляем текст статуса API
   const statusElement = document.getElementById('api-status');
   if (statusElement.textContent.includes('чемпионов') || statusElement.textContent.includes('champions')) {
     updateStats();
   }
 }
 
-// Обновление состояния кнопок переключения языка
 function updateLanguageBtns() {
   document.querySelectorAll('.lang-btn').forEach(btn => {
     btn.classList.remove('active');
@@ -686,34 +601,26 @@ function updateLanguageBtns() {
   document.getElementById(`lang-${currentLanguage}`).classList.add('active');
 }
 
-// Функция переключения языка
 function switchLanguage(lang) {
   if (lang === currentLanguage) return;
   
   currentLanguage = lang;
   
-  // Сохраняем выбранный язык в данных пользователя
   userChampionsData._settings = userChampionsData._settings || {};
   userChampionsData._settings.language = lang;
   saveUserData();
   
-  // Обновляем элементы интерфейса на новом языке
   updateUILanguage();
-  
-  // Повторно загружаем чемпионов с новым языком, чтобы обновить их имена
   initChampions();
 }
 
-// Получение данных о призывателе
 async function fetchSummonerData(summonerName, tagLine, region) {
-  // Проверяем наличие API ключа
   if (!riotApiKey) {
     updateApiStatus(translations[currentLanguage].no_api_key, 'error');
     return null;
   }
   
   try {
-    // Получаем данные аккаунта через Riot Account API
     const accountResponse = await fetch(`https://europe.api.riotgames.com/riot/account/v1/accounts/by-riot-id/${encodeURIComponent(summonerName)}/${encodeURIComponent(tagLine)}`, {
       headers: {
         'X-Riot-Token': riotApiKey
@@ -727,7 +634,6 @@ async function fetchSummonerData(summonerName, tagLine, region) {
     const accountData = await accountResponse.json();
     const puuid = accountData.puuid;
     
-    // Получаем данные призывателя через Summoner API
     const summonerResponse = await fetch(`https://${region}.api.riotgames.com/lol/summoner/v4/summoners/by-puuid/${puuid}`, {
       headers: {
         'X-Riot-Token': riotApiKey
@@ -746,42 +652,31 @@ async function fetchSummonerData(summonerName, tagLine, region) {
   }
 }
 
-// Открытие модального окна загрузки данных
 function openFetchDataModal() {
   const modal = document.getElementById('fetch-data-modal');
   
-  // Показываем форму, скрываем прогресс
   document.querySelector('.player-data-form').style.display = 'block';
   document.querySelector('.progress-container').style.display = 'none';
-  
-  // Устанавливаем прогресс-бар в 0
   document.getElementById('progress-bar').style.width = '0%';
   document.getElementById('progress-info').textContent = '';
-  
-  // Открываем модальное окно
   modal.style.display = 'block';
 }
 
-// Закрытие модального окна загрузки данных
 function closeFetchDataModal() {
   const modal = document.getElementById('fetch-data-modal');
   modal.style.display = 'none';
 }
 
-// Обновление индикатора прогресса
 function updateProgressBar(percent, message) {
   const progressBar = document.getElementById('progress-bar');
   const progressInfo = document.getElementById('progress-info');
   
-  // Обновляем ширину прогресс-бара
   progressBar.style.width = `${percent}%`;
   
-  // Обновляем информационное сообщение
   if (message) {
     progressInfo.textContent = message;
   }
   
-  // Если достигли 100%, делаем прогресс-бар зеленым
   if (percent >= 100) {
     progressBar.style.backgroundColor = '#2ecc71';
   } else {
@@ -789,10 +684,60 @@ function updateProgressBar(percent, message) {
   }
 }
 
-// Получение списка матчей игрока в режиме Арена
+async function fetchArenaMatchesForQueue(puuid, routingValue, queueId, arenaStartTimestamp) {
+  const pageSize = 100;
+  const maxPages = 10;
+  let startIndex = 0;
+  let queueMatches = [];
+  let hasMoreMatches = true;
+  let pageCounter = 0;
+
+  while (hasMoreMatches && pageCounter < maxPages) {
+    pageCounter++;
+    console.log(`Fetching queue ${queueId} page ${pageCounter} (start=${startIndex}, count=${pageSize})`);
+
+    if (pageCounter > 1) {
+      await new Promise(resolve => setTimeout(resolve, 1100));
+    }
+
+    const matchesResponse = await fetch(
+      `https://${routingValue}.api.riotgames.com/lol/match/v5/matches/by-puuid/${puuid}/ids?start=${startIndex}&count=${pageSize}&queueId=${queueId}&startTime=${arenaStartTimestamp}`,
+      {
+        headers: {
+          'X-Riot-Token': riotApiKey
+        }
+      }
+    );
+
+    if (!matchesResponse.ok) {
+      console.error(`Matches API Error (queue ${queueId}): ${matchesResponse.status}`);
+      if (matchesResponse.status === 429) {
+        console.warn('Rate limit exceeded. Waiting 10 seconds before retry...');
+        await new Promise(resolve => setTimeout(resolve, 10000));
+        continue;
+      } else if (matchesResponse.status === 403) {
+        throw new Error(`Matches API Error: ${matchesResponse.status}`);
+      } else {
+        throw new Error(`Matches API Error: ${matchesResponse.status}`);
+      }
+    }
+
+    const pageMatches = await matchesResponse.json();
+    console.log(`Queue ${queueId}: retrieved ${pageMatches.length} matches on page ${pageCounter}`);
+    queueMatches = queueMatches.concat(pageMatches);
+
+    if (pageMatches.length < pageSize) {
+      hasMoreMatches = false;
+    } else {
+      startIndex += pageSize;
+    }
+  }
+
+  return queueMatches;
+}
+
 async function fetchArenaMatches(puuid, region) {
   try {
-    // Определяем региональный роутинг
     let routingValue = 'europe';
     if (['na1', 'br1', 'la1', 'la2'].includes(region)) {
       routingValue = 'americas';
@@ -802,90 +747,35 @@ async function fetchArenaMatches(puuid, region) {
     
     console.log(`Fetching Arena matches for PUUID: ${puuid.substring(0, 8)}... through ${routingValue} routing`);
     
-    // Дата начала режима Арена: 7 февраля 2024
+    // Arena mode launched February 7, 2024
     const arenaStartDate = new Date('2024-02-07T00:00:00Z');
     const arenaStartTimestamp = Math.floor(arenaStartDate.getTime() / 1000);
     console.log(`Filtering matches from timestamp: ${arenaStartTimestamp} (${arenaStartDate.toLocaleString()})`);
     
-    // Максимальное количество страниц для загрузки (безопасный предел)
-    const maxPages = 10;
-    
-    // Размер страницы и начальное смещение
-    const pageSize = 100;
-    let startIndex = 0;
-    let allMatches = [];
-    let hasMoreMatches = true;
-    let pageCounter = 0;
-    
-    // Отображаем прогресс вместо формы
     document.querySelector('.player-data-form').style.display = 'none';
     document.querySelector('.progress-container').style.display = 'block';
     updateProgressBar(0, translations[currentLanguage].loading_data);
     
-    // Получаем список матчей постранично
-    while (hasMoreMatches && pageCounter < maxPages) {
-      pageCounter++;
-      console.log(`Fetching matches page ${pageCounter} (start=${startIndex}, count=${pageSize})`);
-      
-      // Добавляем небольшую задержку между запросами, чтобы не превысить лимиты API
-      if (pageCounter > 1) {
-        await new Promise(resolve => setTimeout(resolve, 1100)); // Ждем 1.1 секунду между запросами страниц
-      }
-      
-      updateApiStatus(`${translations[currentLanguage].loading_data} - ${translations[currentLanguage].page} ${pageCounter}`, 'loading');
-      
-      // Обновляем прогресс
-      const progressEstimate = Math.min(95, (pageCounter / maxPages) * 100);
-      updateProgressBar(progressEstimate, `${translations[currentLanguage].loading_page} ${pageCounter}...`);
-      
-      // Получаем текущую страницу матчей
-      // Добавляем параметр startTime для фильтрации по дате
-      const matchesResponse = await fetch(
-        `https://${routingValue}.api.riotgames.com/lol/match/v5/matches/by-puuid/${puuid}/ids?start=${startIndex}&count=${pageSize}&queue=1700&startTime=${arenaStartTimestamp}`,
-        {
-          headers: {
-            'X-Riot-Token': riotApiKey
-          }
-        }
-      );
-      
-      if (!matchesResponse.ok) {
-        console.error(`Matches API Error: ${matchesResponse.status}`);
-        if (matchesResponse.status === 429) {
-          console.warn('Rate limit exceeded. Waiting 10 seconds before retry...');
-          updateProgressBar(progressEstimate, `${translations[currentLanguage].rate_limit_exceeded}...`);
-          await new Promise(resolve => setTimeout(resolve, 10000)); // Ждем 10 секунд при превышении лимита
-          continue; // Повторяем текущую страницу
-        } else if (matchesResponse.status === 403) {
-          console.error('API key invalid or expired. Please update your API key.');
-          updateProgressBar(30, `${translations[currentLanguage].api_key_error}`);
-          throw new Error(`Matches API Error: ${matchesResponse.status}`);
-        } else {
-          throw new Error(`Matches API Error: ${matchesResponse.status}`);
-        }
-      }
-      
-      const pageMatches = await matchesResponse.json();
-      console.log(`Retrieved ${pageMatches.length} matches on page ${pageCounter}`);
-      
-      // Добавляем матчи текущей страницы к общему списку
-      allMatches = allMatches.concat(pageMatches);
-      
-      // Обновляем прогресс после получения данных
-      updateProgressBar(progressEstimate, `${translations[currentLanguage].loading_data} - ${allMatches.length} ${translations[currentLanguage].matches_loaded}`);
-      
-      // Проверяем, есть ли еще матчи для загрузки
-      if (pageMatches.length < pageSize) {
-        // Если количество матчей на странице меньше размера страницы, значит это последняя страница
-        hasMoreMatches = false;
-        console.log(`Last page reached with ${pageMatches.length} matches`);
-      } else {
-        // Увеличиваем индекс начала для следующей страницы
-        startIndex += pageSize;
+    const allMatchIds = new Set();
+
+    for (let queueIndex = 0; queueIndex < ARENA_QUEUE_IDS.length; queueIndex++) {
+      const queueId = ARENA_QUEUE_IDS[queueIndex];
+      updateApiStatus(`${translations[currentLanguage].loading_data} - queue ${queueId}`, 'loading');
+      const progressEstimate = Math.min(95, ((queueIndex + 0.5) / ARENA_QUEUE_IDS.length) * 100);
+      updateProgressBar(progressEstimate, `${translations[currentLanguage].loading_page} queue ${queueId}...`);
+
+      const queueMatches = await fetchArenaMatchesForQueue(puuid, routingValue, queueId, arenaStartTimestamp);
+      queueMatches.forEach(id => allMatchIds.add(id));
+
+      updateProgressBar(progressEstimate, `${translations[currentLanguage].loading_data} - ${allMatchIds.size} ${translations[currentLanguage].matches_loaded}`);
+
+      if (queueIndex < ARENA_QUEUE_IDS.length - 1) {
+        await new Promise(resolve => setTimeout(resolve, 1100));
       }
     }
-    
-    console.log(`Total matches retrieved: ${allMatches.length}`);
+
+    const allMatches = [...allMatchIds];
+    console.log(`Total unique Arena matches retrieved: ${allMatches.length} (queues: ${ARENA_QUEUE_IDS.join(', ')})`);
     updateProgressBar(100, `${allMatches.length} ${translations[currentLanguage].matches_loaded}`);
     return allMatches;
   } catch (error) {
@@ -896,10 +786,8 @@ async function fetchArenaMatches(puuid, region) {
   }
 }
 
-// Получение данных о матче
 async function fetchMatchData(matchId, region) {
   try {
-    // Определяем региональный роутинг
     let routingValue = 'europe';
     if (['na1', 'br1', 'la1', 'la2'].includes(region)) {
       routingValue = 'americas';
@@ -907,10 +795,8 @@ async function fetchMatchData(matchId, region) {
       routingValue = 'asia';
     }
     
-    // Добавляем небольшую задержку перед запросом, чтобы не превысить лимиты API
     await new Promise(resolve => setTimeout(resolve, 200));
     
-    // Получаем данные матча
     const matchResponse = await fetch(
       `https://${routingValue}.api.riotgames.com/lol/match/v5/matches/${matchId}`,
       {
@@ -920,26 +806,19 @@ async function fetchMatchData(matchId, region) {
       }
     );
     
-    // Проверяем статус ответа
     if (matchResponse.ok) {
       return await matchResponse.json();
     } else if (matchResponse.status === 429) {
-      // Обработка превышения лимита запросов
       console.warn(`Rate limit exceeded for match ${matchId}. Adding delay.`);
       
-      // Получаем время ожидания из заголовка, если есть
       const retryAfter = matchResponse.headers.get('Retry-After');
       const delayTime = retryAfter ? parseInt(retryAfter) * 1000 : 5000;
       
       console.log(`Waiting for ${delayTime / 1000} seconds before retrying...`);
       
-      // Ждем указанное время
       await new Promise(resolve => setTimeout(resolve, delayTime));
-      
-      // Повторяем запрос рекурсивно после задержки
       return await fetchMatchData(matchId, region);
     } else {
-      // Другие ошибки
       console.error(`Match API Error for ${matchId}: ${matchResponse.status}`);
       return null;
     }
@@ -949,58 +828,54 @@ async function fetchMatchData(matchId, region) {
   }
 }
 
-// Функция для создания карты ID чемпионов
 async function buildChampionIdMap() {
   try {
     console.log('Building champion ID map...');
-    // Получаем последнюю версию API
     const versionsResponse = await fetch('https://ddragon.leagueoflegends.com/api/versions.json');
     const versions = await versionsResponse.json();
     const latestVersion = versions[0];
     console.log(`Using DataDragon version: ${latestVersion}`);
     
-    // Запрашиваем информацию о чемпионах через DataDragon API
     const response = await fetch(`https://ddragon.leagueoflegends.com/cdn/${latestVersion}/data/en_US/champion.json`);
     const data = await response.json();
     
-    // Очищаем существующую карту
     championIdMap = {};
     
-    // Создаем карту ID -> key для каждого чемпиона
     Object.values(data.data).forEach(champion => {
-      // В API match key чемпиона приходит как числовое значение
-      championIdMap[champion.key] = champion.id.toLowerCase();
-      // Также добавляем имя как ключ (в нижнем регистре и без пробелов) для запасного сопоставления
-      const nameKey = champion.name.replace(/\s+/g, '').toLowerCase();
-      if (nameKey !== champion.id.toLowerCase()) {
-        championIdMap[nameKey] = champion.id.toLowerCase();
-      }
+      const championId = champion.id.toLowerCase();
+      // Match API uses numeric champion key
+      championIdMap[champion.key] = championId;
+      // Also index stripped names for match API championName field
+      const nameVariants = [
+        champion.name.replace(/\s+/g, '').toLowerCase(),
+        champion.name.replace(/[\s'&.]/g, '').toLowerCase()
+      ];
+      nameVariants.forEach(nameKey => {
+        if (nameKey !== championId) {
+          championIdMap[nameKey] = championId;
+        }
+      });
     });
     
     console.log('Champion ID map built successfully.');
     console.log('Total champions in map:', Object.keys(championIdMap).length);
     
-    // Проверка, что карта не пустая
     if (Object.keys(championIdMap).length === 0) {
       console.error('Champion ID map is empty after building!');
-      // В случае ошибки, создаем запасную карту для некоторых часто используемых чемпионов
       return createFallbackChampionMap();
     }
     
     return championIdMap;
   } catch (error) {
     console.error('Error building champion ID map:', error);
-    // В случае ошибки, создаем запасную карту для некоторых часто используемых чемпионов
     return createFallbackChampionMap();
   }
 }
 
-// Создание запасной карты чемпионов (для случаев ошибок API)
 function createFallbackChampionMap() {
   console.log('Creating fallback champion map...');
   const fallbackMap = {};
   
-  // Список часто используемых чемпионов (ID: name)
   const commonChampions = {
     '266': 'aatrox', '103': 'ahri', '84': 'akali', '12': 'alistar', '32': 'amumu',
     '1': 'annie', '22': 'ashe', '136': 'aurelionsol', '268': 'azir', '432': 'bard',
@@ -1037,10 +912,8 @@ function createFallbackChampionMap() {
     '233': 'briar', '893': 'aurora'
   };
   
-  // Заполняем запасную карту
   for (const [id, name] of Object.entries(commonChampions)) {
     fallbackMap[id] = name;
-    // Также добавляем имя как ключ
     fallbackMap[name] = name;
   }
   
@@ -1048,9 +921,7 @@ function createFallbackChampionMap() {
   return fallbackMap;
 }
 
-// Обновление информации о чемпионах на основе данных матчей
 async function processArenaMatches(matches, puuid, region) {
-  // Строим карту ID чемпионов, если её еще нет
   if (Object.keys(championIdMap).length === 0) {
     championIdMap = await buildChampionIdMap();
     console.log('Champion ID map ready:', Object.keys(championIdMap).length, 'entries');
@@ -1063,18 +934,15 @@ async function processArenaMatches(matches, puuid, region) {
   let arenaMatchesCount = 0;
   const totalMatches = matches.length;
   
-  // Определяем размер пакета матчей для обновления статуса
-  // Чем больше матчей, тем реже обновляем статус
+  // Update UI less often when processing large match lists
   const updateFrequency = totalMatches > 500 ? 20 : 
                           totalMatches > 200 ? 10 : 
                           totalMatches > 100 ? 5 : 1;
   
   updateApiStatus(`${translations[currentLanguage].loading_data} 0/${totalMatches}`, 'loading');
   
-  // Хранение информации о найденных чемпионах (для отладки)
   const foundChampions = new Map();
   
-  // Проходим по всем матчам
   for (const matchId of matches) {
     try {
       const matchData = await fetchMatchData(matchId, region);
@@ -1083,7 +951,6 @@ async function processArenaMatches(matches, puuid, region) {
         if (processedCount % updateFrequency === 0 || processedCount === totalMatches) {
           updateApiStatus(`${translations[currentLanguage].loading_data} ${processedCount}/${totalMatches} (Arena: ${arenaMatchesCount})`, 'loading');
           
-          // Обновляем прогресс-бар
           const progressPercent = Math.min(100, Math.round((processedCount / totalMatches) * 100));
           updateProgressBar(progressPercent, `${translations[currentLanguage].loading_data} ${processedCount}/${totalMatches} (Arena: ${arenaMatchesCount})`);
         }
@@ -1092,28 +959,19 @@ async function processArenaMatches(matches, puuid, region) {
       
       processedCount++;
       
-      // Проверяем тип матча на Арену
-      // Способ 1: проверка по gameMode
+      // Arena detection: CHERRY gameMode, known queue IDs, or ARENA gameType
       const isArenaByGameMode = matchData.info.gameMode === 'CHERRY';
-      // Способ 2: проверка по queueId (Арена = 1700, 1710, 1720, 1730)
-      const arenaQueueIds = [1700, 1710, 1720, 1730];
-      const isArenaByQueueId = arenaQueueIds.includes(matchData.info.queueId);
-      // Способ 3: проверка по gameType
+      const isArenaByQueueId = ARENA_QUEUE_IDS.includes(matchData.info.queueId);
       const isArenaByGameType = matchData.info.gameType === 'ARENA';
-      
-      // Объединяем все способы проверки с приоритетом
       const isArenaMatch = isArenaByGameMode || isArenaByQueueId || isArenaByGameType;
       
-      // Обновляем статус каждые updateFrequency матчей или в конце
       if (processedCount % updateFrequency === 0 || processedCount === totalMatches) {
         updateApiStatus(`${translations[currentLanguage].loading_data} ${processedCount}/${totalMatches} (Arena: ${arenaMatchesCount})`, 'loading');
         
-        // Обновляем прогресс-бар
         const progressPercent = Math.min(100, Math.round((processedCount / totalMatches) * 100));
         updateProgressBar(progressPercent, `${translations[currentLanguage].loading_data} ${processedCount}/${totalMatches} (Arena: ${arenaMatchesCount})`);
       }
       
-      // Дополнительный лог для отладки
       console.log(`Match ${matchId} - gameMode: ${matchData.info.gameMode}, queueId: ${matchData.info.queueId}, gameType: ${matchData.info.gameType}, isArena: ${isArenaMatch}`);
       
       if (!isArenaMatch) {
@@ -1122,14 +980,12 @@ async function processArenaMatches(matches, puuid, region) {
       
       arenaMatchesCount++;
       
-      // Находим данные игрока в этом матче
       const playerData = matchData.info.participants.find(p => p.puuid === puuid);
       if (!playerData) {
         console.log(`Match ${matchId} - Player data not found`);
         continue;
       }
       
-      // Выводим подробную информацию о данных игрока для отладки
       console.log(`Match ${matchId} - Player data:`, 
         JSON.stringify({
           championId: playerData.championId,
@@ -1141,7 +997,6 @@ async function processArenaMatches(matches, puuid, region) {
         }, null, 2)
       );
       
-      // Дополнительно логируем структуру teams для отладки
       if (matchData.info.teams && matchData.info.teams.length > 0) {
         console.log(`Match ${matchId} - Teams structure:`, 
           JSON.stringify(matchData.info.teams.map(team => ({
@@ -1152,50 +1007,37 @@ async function processArenaMatches(matches, puuid, region) {
         );
       }
       
-      // Получаем championId и преобразуем его в строку
       const championNumericId = playerData.championId.toString();
-      // Получаем championName для логов
       const championName = playerData.championName || "Unknown";
       
-      // Конвертируем числовой ID чемпиона в текстовый ключ (lowercase)
       let championKey = championIdMap[championNumericId];
       
-      // Если не нашли в карте, попробуем использовать championName (если доступно)
       if (!championKey && championName && championName !== "Unknown") {
-        championKey = championName.replace(/\s+/g, '').toLowerCase();
+        championKey = championName.replace(/[\s'&.]/g, '').toLowerCase();
         console.log(`Using name-based fallback for champion key: ${championName} -> ${championKey}`);
       } else if (!championKey) {
-        // Если не удалось найти ключ, используем ID как ключ (это запасной вариант)
         championKey = championNumericId;
         console.log(`Fallback to numeric ID as key: ${championNumericId}`);
       }
+
+      championKey = normalizeChampionKey(championKey);
       
-      // Логгируем информацию о найденном чемпионе
       console.log(`Match ${matchId} - Player used champion: ${championName} (ID: ${championNumericId}, Key: ${championKey})`);
       
-      // Сохраняем информацию о чемпионе (для отладки)
       foundChampions.set(championKey, (foundChampions.get(championKey) || 0) + 1);
-      
-      // Добавляем чемпиона в список сыгранных
       playedChampions.add(championKey);
       
-      // Проверяем, занял ли игрок первое место
-      // Для режима Арена проверяем по-другому, так как placement может быть указан иначе
+      // First place: participant placement, subteamPlacement, or team placement (not win)
       let isFirstPlace = false;
       
-      // Проверяем несколько способов определения первого места в режиме Арена
-      
-      // Способ 1: прямое свойство placement у participant
       if (playerData.placement !== undefined) {
         isFirstPlace = playerData.placement === 1;
         console.log(`Method 1: player.placement = ${playerData.placement}, isFirstPlace = ${isFirstPlace}`);
       }
-      // Способ 2: свойство subteamPlacement, которое может использоваться в режиме Арена
       else if (playerData.subteamPlacement !== undefined) {
         isFirstPlace = playerData.subteamPlacement === 1;
         console.log(`Method 2: player.subteamPlacement = ${playerData.subteamPlacement}, isFirstPlace = ${isFirstPlace}`);
       }
-      // Способ 3: свойство placement в команде
       else if (playerData.teamId !== undefined) {
         const playerTeam = playerData.teamId;
         const team = matchData.info.teams.find(t => t.teamId === playerTeam);
@@ -1203,22 +1045,17 @@ async function processArenaMatches(matches, puuid, region) {
           isFirstPlace = team.placement === 1;
           console.log(`Method 3: team.placement = ${team.placement}, isFirstPlace = ${isFirstPlace}`);
         } else if (team) {
-          // Если нет placement в команде, не считаем первым местом
           isFirstPlace = false;
           console.log(`Method 3 failed: team found but no placement value`);
         }
       }
-      // Больше не используем win для определения первого места
-      // Сообщаем, что не удалось определить место
       if (!playerData.placement && !playerData.subteamPlacement && 
           !(matchData.info.teams && matchData.info.teams.length && matchData.info.teams[0].placement !== undefined)) {
         console.log(`Could not determine placement: no placement data found in match ${matchId}`);
       }
       
-      // Итоговое решение о первом месте
       console.log(`Match ${matchId} - Final decision: isFirstPlace = ${isFirstPlace}`);
       
-      // Если игрок занял первое место, добавляем чемпиона в соответствующий список
       if (isFirstPlace) {
         firstPlaceChampions.add(championKey);
         console.log(`Adding ${championKey} to first place list`);
@@ -1230,18 +1067,15 @@ async function processArenaMatches(matches, puuid, region) {
       console.error(`Error processing match ${matchId}:`, error);
       processedCount++;
       
-      // Обновляем статус при ошибке только если это частый интервал или последний матч
       if (processedCount % updateFrequency === 0 || processedCount === totalMatches) {
         updateApiStatus(`${translations[currentLanguage].loading_data} ${processedCount}/${totalMatches} (Arena: ${arenaMatchesCount})`, 'loading');
         
-        // Обновляем прогресс-бар
         const progressPercent = Math.min(100, Math.round((processedCount / totalMatches) * 100));
         updateProgressBar(progressPercent, `${translations[currentLanguage].loading_data} ${processedCount}/${totalMatches} (Arena: ${arenaMatchesCount})`);
       }
     }
   }
   
-  // Логгируем найденных чемпионов
   console.log('Found champions:', [...foundChampions.entries()]);
   console.log('Champions played:', [...playedChampions]);
   console.log('Champions with first place:', [...firstPlaceChampions]);
@@ -1275,13 +1109,14 @@ function updateChampionsData(playedChampions, firstPlaceChampions) {
   
   // Обрабатываем всех чемпионов из API
   [...playedChampions].forEach(apiChampionId => {
+    const normalizedId = normalizeChampionKey(apiChampionId);
     let found = false;
     
     // Пытаемся найти чемпиона в нашем приложении
-    if (apiChampionId in appChampionsMap) {
-      const champion = appChampionsMap[apiChampionId];
+    if (normalizedId in appChampionsMap) {
+      const champion = appChampionsMap[normalizedId];
       const isPlayed = true; // Всегда true, так как это из списка played
-      const isFirst = firstPlaceChampions.has(apiChampionId);
+      const isFirst = firstPlaceChampions.has(normalizedId) || firstPlaceChampions.has(apiChampionId);
       
       console.log(`Champion found by exact match: ${champion.name} (${champion.id}): played=${isPlayed}, first=${isFirst}`);
       
@@ -1307,10 +1142,10 @@ function updateChampionsData(playedChampions, firstPlaceChampions) {
     if (!found) {
       // Попытаемся найти частичное совпадение
       for (const appChampionId in appChampionsMap) {
-        if (appChampionId.includes(apiChampionId) || apiChampionId.includes(appChampionId)) {
+        if (appChampionId.includes(normalizedId) || normalizedId.includes(appChampionId)) {
           const champion = appChampionsMap[appChampionId];
           const isPlayed = true;
-          const isFirst = firstPlaceChampions.has(apiChampionId);
+          const isFirst = firstPlaceChampions.has(normalizedId) || firstPlaceChampions.has(apiChampionId);
           
           console.log(`Champion found by partial match: ${champion.name} (${champion.id}): API ID=${apiChampionId}, played=${isPlayed}, first=${isFirst}`);
           
@@ -1336,8 +1171,8 @@ function updateChampionsData(playedChampions, firstPlaceChampions) {
     }
     
     if (!found) {
-      championsNotFound.push(apiChampionId);
-      console.warn(`Champion not found in app: ${apiChampionId}`);
+      championsNotFound.push(`${apiChampionId} (normalized: ${normalizedId})`);
+      console.warn(`Champion not found in app: ${apiChampionId} (normalized: ${normalizedId})`);
     }
   });
   
