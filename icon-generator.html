@@ -39,11 +39,9 @@
     const canvas = document.getElementById('iconCanvas');
     const ctx = canvas.getContext('2d');
     
-    // Фон
     ctx.fillStyle = '#0a1428';
     ctx.fillRect(0, 0, 256, 256);
     
-    // Внешний круг
     ctx.beginPath();
     ctx.arc(128, 128, 100, 0, Math.PI * 2);
     ctx.fillStyle = '#1e2328';
@@ -52,7 +50,6 @@
     ctx.lineWidth = 5;
     ctx.stroke();
     
-    // Галочка "играл"
     ctx.beginPath();
     ctx.moveTo(90, 128);
     ctx.lineTo(115, 160);
@@ -61,7 +58,6 @@
     ctx.strokeStyle = '#0a7e8c';
     ctx.stroke();
     
-    // Звезда "первое место"
     ctx.fillStyle = '#c8aa6e';
     const spikes = 5;
     const outerRadius = 25;
@@ -93,7 +89,6 @@
     ctx.closePath();
     ctx.fill();
     
-    // Кнопка скачивания
     document.getElementById('downloadBtn').addEventListener('click', function() {
       const dataUrl = canvas.toDataURL('image/png');
       const link = document.createElement('a');

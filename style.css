@@ -12,9 +12,8 @@ body {
   padding: 0;
 }
 
-/* Добавляем пустой блок для фиксированной высоты шапки */
 .header-placeholder {
-  height: 130px; /* Уменьшаем высоту шапки */
+  height: 130px;
   width: 100%;
 }
 
@@ -60,7 +59,6 @@ h1 {
   flex: 1;
 }
 
-/* Стили для элементов управления в шапке */
 .header-controls {
   display: flex;
   align-items: center;
@@ -69,7 +67,6 @@ h1 {
   justify-content: flex-end;
 }
 
-/* Стили для переключателя языка */
 .language-switcher {
   display: flex;
   gap: 5px;
@@ -97,7 +94,6 @@ h1 {
   border-color: #0a7e8c;
 }
 
-/* Стили для кнопок управления */
 .control-btn {
   width: 35px;
   height: 35px;
@@ -121,7 +117,6 @@ h1 {
   font-size: 18px;
 }
 
-/* Стили для API ключа (оставлено для совместимости) */
 .api-key-btn {
   width: 35px;
   height: 35px;
@@ -145,7 +140,6 @@ h1 {
   font-size: 18px;
 }
 
-/* Стили для модального окна */
 .modal {
   display: none;
   position: fixed;
@@ -233,7 +227,6 @@ h1 {
   background-color: #0a9cac;
 }
 
-/* Обновленные стили для формы игрока в модальном окне */
 .player-data-form {
   margin-bottom: 20px;
 }
@@ -304,7 +297,6 @@ h1 {
   background-color: #0a9cac;
 }
 
-/* Стили для индикатора прогресса */
 .progress-container {
   margin-top: 20px;
 }
@@ -352,7 +344,6 @@ h1 {
   color: #f39c12;
 }
 
-/* Стили для поиска */
 .search-container {
   position: relative;
   width: 300px;
@@ -395,7 +386,6 @@ h1 {
   background-color: rgba(200, 170, 110, 0.1);
 }
 
-/* Стили для статистики */
 .stats-container {
   display: flex;
   justify-content: center;
@@ -444,7 +434,6 @@ h1 {
   font-weight: bold;
 }
 
-/* Стили для отображения рангов и прогресса */
 .rank-info {
   display: flex;
   align-items: center;
@@ -501,7 +490,6 @@ h1 {
   white-space: nowrap;
 }
 
-/* Стили для прогресс-баров челленджей */
 .challenge-progress-container {
   margin-top: 6px;
   width: 100%;
@@ -523,13 +511,13 @@ h1 {
   align-items: center;
   justify-content: center;
   position: relative;
-  min-width: 0; /* Гарантирует, что ширина может быть 0% */
-  will-change: width; /* Оптимизация для плавных анимаций */
+  min-width: 0;
+  will-change: width;
 }
 
 #first-progress-bar {
-  z-index: 1; /* Гарантирует, что прогресс-бар отображается */
-  transform: translateZ(0); /* Применяется аппаратное ускорение */
+  z-index: 1;
+  transform: translateZ(0); /* GPU layer for reliable width updates */
 }
 
 .challenge-progress-text {
@@ -540,7 +528,7 @@ h1 {
   font-weight: bold;
   color: #f0e6d2;
   text-shadow: 0 0 2px rgba(0, 0, 0, 0.7);
-  z-index: 2; /* Гарантирует, что текст всегда поверх прогресс-бара */
+  z-index: 2;
 }
 
 .loading {
@@ -619,7 +607,6 @@ h1 {
   font-weight: bold;
 }
 
-/* Всплывающие подсказки для иконок статуса */
 .status-icon:hover::before {
   content: attr(title);
   position: absolute;

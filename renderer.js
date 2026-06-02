@@ -1083,9 +1083,7 @@ async function processArenaMatches(matches, puuid, region) {
   return { playedChampions, firstPlaceChampions, arenaMatchesCount };
 }
 
-// Обновление данных чемпионов на основе полученных из API
 function updateChampionsData(playedChampions, firstPlaceChampions) {
-  // Сопоставляем ID чемпионов с данными в нашем приложении
   let championsUpdated = 0;
   let championsNotFound = [];
   
@@ -1094,28 +1092,24 @@ function updateChampionsData(playedChampions, firstPlaceChampions) {
   console.log('First place champions from API:', [...firstPlaceChampions]);
   console.log('Note: Only champions with placement=1 are marked as "first place"');
   
-  // Создаем нормализованную карту ID чемпионов из приложения для сопоставления
   const appChampionsMap = {};
   champions.forEach(champion => {
     const id = champion.id.toLowerCase();
     appChampionsMap[id] = champion;
     
-    // Также добавляем вариант без пробелов для лучшего сопоставления
     const nameKey = champion.name.replace(/\s+/g, '').toLowerCase();
     if (nameKey !== id) {
       appChampionsMap[nameKey] = champion;
     }
   });
   
-  // Обрабатываем всех чемпионов из API
   [...playedChampions].forEach(apiChampionId => {
     const normalizedId = normalizeChampionKey(apiChampionId);
     let found = false;
     
-    // Пытаемся найти чемпиона в нашем приложении
     if (normalizedId in appChampionsMap) {
       const champion = appChampionsMap[normalizedId];
-      const isPlayed = true; // Всегда true, так как это из списка played
+      const isPlayed = true;
       const isFirst = firstPlaceChampions.has(normalizedId) || firstPlaceChampions.has(apiChampionId);
       
       console.log(`Champion found by exact match: ${champion.name} (${champion.id}): played=${isPlayed}, first=${isFirst}`);
@@ -1123,11 +1117,9 @@ function updateChampionsData(playedChampions, firstPlaceChampions) {
       if (isPlayed !== champion.played || isFirst !== champion.first) {
         championsUpdated++;
         
-        // Обновляем данные в массиве чемпионов
         champion.played = isPlayed;
         champion.first = isFirst;
         
-        // Обновляем данные пользователя
         if (!userChampionsData[champion.id]) {
           userChampionsData[champion.id] = { played: false, first: false };
         }
@@ -1138,9 +1130,7 @@ function updateChampionsData(playedChampions, firstPlaceChampions) {
       found = true;
     }
     
-    // Если не нашли точное совпадение, ищем по частичному совпадению
     if (!found) {
-      // Попытаемся найти частичное совпадение
       for (const appChampionId in appChampionsMap) {
         if (appChampionId.includes(normalizedId) || normalizedId.includes(appChampionId)) {
           const champion = appChampionsMap[appChampionId];
@@ -1152,11 +1142,9 @@ function updateChampionsData(playedChampions, firstPlaceChampions) {
           if (isPlayed !== champion.played || isFirst !== champion.first) {
             championsUpdated++;
             
-            // Обновляем данные в массиве чемпионов
             champion.played = isPlayed;
             champion.first = isFirst;
             
-            // Обновляем данные пользователя
             if (!userChampionsData[champion.id]) {
               userChampionsData[champion.id] = { played: false, first: false };
             }
@@ -1184,7 +1172,6 @@ function updateChampionsData(playedChampions, firstPlaceChampions) {
   return championsUpdated;
 }
 
-// Обработчик нажатия кнопки "Загрузить данные"
 async function fetchPlayerData() {
   const playerName = document.getElementById('player-name').value.trim();
   const playerTag = document.getElementById('player-tag').value.trim().replace(/^#/, '');
@@ -1196,7 +1183,6 @@ async function fetchPlayerData() {
     return;
   }
   
-  // Проверяем наличие API ключа
   if (!riotApiKey) {
     updateApiStatus(translations[currentLanguage].no_api_key, 'error');
     updateProgressBar(0, translations[currentLanguage].no_api_key);
@@ -1210,7 +1196,6 @@ async function fetchPlayerData() {
   try {
     console.log(`Fetching data for ${playerName}#${playerTag} in region ${playerRegion}`);
     
-    // Получаем данные призывателя
     const summonerData = await fetchSummonerData(playerName, playerTag, playerRegion);
     if (!summonerData) {
       updateApiStatus(`${translations[currentLanguage].player_not_found} (${playerName}#${playerTag})`, 'error');
@@ -1222,7 +1207,6 @@ async function fetchPlayerData() {
     updateApiStatus(`${translations[currentLanguage].loading_data} - ${translations[currentLanguage].summoner_name_placeholder}: ${summonerData.name}`, 'loading');
     updateProgressBar(10, `${translations[currentLanguage].summoner_name_placeholder}: ${summonerData.name}`);
     
-    // Получаем список матчей (теперь с пагинацией - может быть много)
     const matches = await fetchArenaMatches(summonerData.puuid, playerRegion);
     if (matches.length === 0) {
       updateApiStatus(translations[currentLanguage].no_arena_games, 'error');
@@ -1232,7 +1216,6 @@ async function fetchPlayerData() {
     
     console.log(`Found ${matches.length} matches to analyze`);
     
-    // Сохраняем список матчей в данных пользователя для возможного возобновления
     if (!userChampionsData._history) {
       userChampionsData._history = {};
     }
@@ -1243,23 +1226,18 @@ async function fetchPlayerData() {
     userChampionsData._history.playerRegion = playerRegion;
     userChampionsData._history.totalMatches = matches.length;
     
-    // Сохраняем данные перед обработкой матчей
     saveUserData();
     
     updateApiStatus(`${translations[currentLanguage].loading_data} - ${matches.length} matches`, 'loading');
     
-    // Запоминаем время начала обработки для отображения статистики
     const startTime = Date.now();
     
-    // Обрабатываем матчи и получаем информацию о чемпионах
-    // Определяем максимальное количество матчей для одного прохода
-    const batchSize = 100; // Количество матчей для обработки в одном пакете
+    const batchSize = 100;
     let totalPlayedChampions = new Set();
     let totalFirstPlaceChampions = new Set();
     let totalArenaMatchesCount = 0;
     let totalUpdatedCount = 0;
     
-    // Разбиваем матчи на пакеты для поэтапной обработки
     for (let batchStart = 0; batchStart < matches.length; batchStart += batchSize) {
       const batchEnd = Math.min(batchStart + batchSize, matches.length);
       const currentBatch = matches.slice(batchStart, batchEnd);
@@ -1269,7 +1247,6 @@ async function fetchPlayerData() {
       console.log(`Processing batch ${batchNumber}/${totalBatches} (matches ${batchStart+1}-${batchEnd} of ${matches.length})`);
       updateApiStatus(`${translations[currentLanguage].loading_data} - ${translations[currentLanguage].batch} ${batchNumber}/${totalBatches}`, 'loading');
       
-      // Обновляем прогресс-бар
       const progressStart = 20 + ((batchNumber - 1) / totalBatches) * 70;
       const progressMsg = `${translations[currentLanguage].batch} ${batchNumber}/${totalBatches}`;
       updateProgressBar(progressStart, progressMsg);
@@ -1277,28 +1254,21 @@ async function fetchPlayerData() {
       const { playedChampions, firstPlaceChampions, arenaMatchesCount } = 
         await processArenaMatches(currentBatch, summonerData.puuid, playerRegion);
       
-      // Объединяем результаты
       playedChampions.forEach(champ => totalPlayedChampions.add(champ));
       firstPlaceChampions.forEach(champ => totalFirstPlaceChampions.add(champ));
       totalArenaMatchesCount += arenaMatchesCount;
       
-      // Обновляем данные чемпионов после каждого пакета
       const updatedCount = updateChampionsData(totalPlayedChampions, totalFirstPlaceChampions);
-      totalUpdatedCount = updatedCount; // Последний результат будет итоговым
+      totalUpdatedCount = updatedCount;
       
-      // Сохраняем промежуточные результаты
       userChampionsData._history.processedBatches = batchNumber;
       userChampionsData._history.processedMatches = batchEnd;
       userChampionsData._history.arenaMatchesFound = totalArenaMatchesCount;
       saveUserData();
       
-      // Обновляем статистику после каждого пакета
       updateStats();
-      
-      // Обновляем отображение
       filterChampions(currentFilter, document.getElementById('search').value);
       
-      // Обновляем статус обработки
       const elapsedTime = (Date.now() - startTime) / 1000;
       const estimatedTotalTime = (elapsedTime / batchEnd) * matches.length;
       const remainingTime = Math.max(0, estimatedTotalTime - elapsedTime);
@@ -1306,15 +1276,12 @@ async function fetchPlayerData() {
       const progressMessage = `${translations[currentLanguage].loading_data} - ${translations[currentLanguage].progress}: ${batchEnd}/${matches.length} ${translations[currentLanguage].matches_loaded} (${Math.round(batchEnd/matches.length*100)}%)`;
       updateApiStatus(progressMessage, 'loading');
       
-      // Обновляем прогресс-бар снова
       const progressEnd = 20 + (batchNumber / totalBatches) * 70;
       updateProgressBar(progressEnd, progressMessage);
       
-      // Даем время для обновления UI и сборки мусора
       await new Promise(resolve => setTimeout(resolve, 100));
     }
     
-    // Проверяем, нашли ли мы матчи в режиме Арена
     if (totalArenaMatchesCount === 0) {
       updateApiStatus(translations[currentLanguage].no_arena_games, 'error');
       updateProgressBar(100, translations[currentLanguage].no_arena_games);
@@ -1323,16 +1290,13 @@ async function fetchPlayerData() {
     
     console.log(`Found ${totalPlayedChampions.size} played champions and ${totalFirstPlaceChampions.size} first place champions in ${totalArenaMatchesCount} Arena matches`);
     
-    // Сохраняем обновленные данные
     userChampionsData._history.completed = true;
     userChampionsData._history.completionTime = new Date().toISOString();
     saveUserData();
     
-    // Обновляем статистику и отображение
     updateStats();
     filterChampions(currentFilter, document.getElementById('search').value);
     
-    // Считаем общее время выполнения
     const totalElapsedTime = (Date.now() - startTime) / 1000;
     const timeStr = totalElapsedTime > 60 
       ? `${Math.floor(totalElapsedTime/60)}${currentLanguage === 'ru' ? 'м' : 'm'} ${Math.round(totalElapsedTime%60)}${currentLanguage === 'ru' ? 'с' : 's'}`
@@ -1340,13 +1304,10 @@ async function fetchPlayerData() {
       
     const successMessage = `${translations[currentLanguage].data_loaded} (${totalUpdatedCount} ${currentLanguage === 'ru' ? 'чемпионов' : 'champions'}, ${totalArenaMatchesCount} ${currentLanguage === 'ru' ? 'игр' : 'games'}, ${timeStr})`;
     updateApiStatus(successMessage, 'success');
-    
-    // Обновляем прогресс-бар в конце
     updateProgressBar(100, successMessage);
     
     console.log(`Data update complete. Updated ${totalUpdatedCount} champions from ${totalArenaMatchesCount} Arena matches in ${timeStr}.`);
     
-    // Закрываем модальное окно через 2 секунды после успешного завершения
     setTimeout(() => {
       closeFetchDataModal();
     }, 2000);
@@ -1357,7 +1318,6 @@ async function fetchPlayerData() {
   }
 }
 
-// Обновление статуса API запроса
 function updateApiStatus(message, type = '') {
   const statusElement = document.getElementById('api-status');
   statusElement.textContent = message;
@@ -1367,7 +1327,6 @@ function updateApiStatus(message, type = '') {
   }
 }
 
-// Рендеринг отфильтрованных чемпионов
 function renderChampionsFromArray(championsArray) {
   const container = document.getElementById('champions-container');
   container.innerHTML = '';
@@ -1392,23 +1351,19 @@ function renderChampionsFromArray(championsArray) {
     container.appendChild(championCard);
   });
 
-  // Добавляем обработчики событий для значков статуса
   document.querySelectorAll('.status-icon').forEach(icon => {
     icon.addEventListener('click', toggleChampionStatus);
   });
   
-  // Добавляем обработчики событий для изображений чемпионов
   document.querySelectorAll('.champion-img').forEach(img => {
     img.addEventListener('click', toggleChampionByImage);
   });
 }
 
-// Отображение всех чемпионов (используется при инициализации)
 function renderChampions() {
   renderChampionsFromArray(champions);
 }
 
-// Переключение статуса чемпиона (играл/занял первое место)
 function toggleChampionStatus(event) {
   const championId = event.target.getAttribute('data-id');
   const statusType = event.target.getAttribute('data-status');
@@ -1416,47 +1371,37 @@ function toggleChampionStatus(event) {
   const championIndex = champions.findIndex(c => c.id === championId);
   if (championIndex === -1) return;
   
-  // Обновляем статус выбранного чемпиона
   champions[championIndex][statusType] = !champions[championIndex][statusType];
   
-  // Если выбрано "первое место", автоматически устанавливаем "играл"
+  // first implies played; clearing played clears first
   if (statusType === 'first' && champions[championIndex].first) {
     champions[championIndex].played = true;
   }
   
-  // Если снимается "играл", автоматически снимаем "первое место"
   if (statusType === 'played' && !champions[championIndex].played && champions[championIndex].first) {
     champions[championIndex].first = false;
   }
   
-  // Обновляем данные пользователя
   if (!userChampionsData[championId]) {
     userChampionsData[championId] = { played: false, first: false };
   }
   userChampionsData[championId][statusType] = champions[championIndex][statusType];
   
-  // Если выбрано "первое место", автоматически устанавливаем "играл" в данных пользователя
   if (statusType === 'first' && userChampionsData[championId].first) {
     userChampionsData[championId].played = true;
   }
   
-  // Если снимается "играл", автоматически снимаем "первое место" в данных пользователя
   if (statusType === 'played' && !userChampionsData[championId].played && userChampionsData[championId].first) {
     userChampionsData[championId].first = false;
   }
   
-  // Сохраняем данные
   saveUserData();
-  
-  // Обновляем статистику
   updateStats();
   
-  // Повторно применяем текущий фильтр
   const searchInput = document.getElementById('search');
   filterChampions(currentFilter, searchInput.value);
 }
 
-// Обработчик клика по изображению чемпиона
 function toggleChampionByImage(event) {
   const championId = event.target.getAttribute('data-id');
   
@@ -1465,51 +1410,38 @@ function toggleChampionByImage(event) {
   
   const champion = champions[championIndex];
   
+  // Cycle: none -> played -> first -> none
   if (champion.played && champion.first) {
-    // Если обе галочки установлены, снимаем обе
     champion.played = false;
     champion.first = false;
   } else if (champion.played) {
-    // Если установлена только галочка "играл", устанавливаем "первое место"
     champion.first = true;
   } else {
-    // Если не установлено ничего, устанавливаем "играл"
     champion.played = true;
   }
   
-  // Обновляем данные пользователя
   if (!userChampionsData[championId]) {
     userChampionsData[championId] = { played: false, first: false };
   }
   userChampionsData[championId].played = champion.played;
   userChampionsData[championId].first = champion.first;
   
-  // Сохраняем данные
   saveUserData();
-  
-  // Обновляем статистику
   updateStats();
   
-  // Повторно применяем текущий фильтр
   const searchInput = document.getElementById('search');
   filterChampions(currentFilter, searchInput.value);
 }
 
-// Функция поиска чемпионов
 function searchChampions(query) {
-  // Применяем поиск с учетом текущего фильтра
   filterChampions(currentFilter, query);
 }
 
-// Функционал для модального окна API ключа
 function openApiKeyModal() {
   const modal = document.getElementById('api-key-modal');
   const input = document.getElementById('api-key-input');
   
-  // Устанавливаем текущий ключ в поле ввода, если он есть
   input.value = riotApiKey || '';
-  
-  // Открываем модальное окно
   modal.style.display = 'block';
 }
 
@@ -1534,20 +1466,15 @@ function saveApiKey() {
   updateApiStatus(translations[currentLanguage].api_key_saved, 'success');
 }
 
-// Очистка поля поиска
 function clearSearch() {
   const searchInput = document.getElementById('search');
   searchInput.value = '';
   searchInput.focus();
   
-  // Обновляем отображение чемпионов с пустым поиском
   searchChampions('');
-  
-  // Скрываем кнопку очистки
   toggleClearButton();
 }
 
-// Отображение/скрытие кнопки очистки в зависимости от содержимого поля поиска
 function toggleClearButton() {
   const searchInput = document.getElementById('search');
   const clearButton = document.getElementById('clear-search');
@@ -1559,7 +1486,6 @@ function toggleClearButton() {
   }
 }
 
-// Обновление статуса кнопок фильтра
 function updateFilterBtns() {
   document.querySelectorAll('.filter-btn').forEach(btn => {
     btn.classList.remove('active');
@@ -1578,35 +1504,28 @@ function updateFilterBtns() {
   }
 }
 
-// Инициализация приложения при загрузке DOM
 document.addEventListener('DOMContentLoaded', () => {
   initChampions();
   
-  // Добавление обработчика для поиска
   const searchInput = document.getElementById('search');
   searchInput.addEventListener('input', (e) => {
     searchChampions(e.target.value);
     toggleClearButton();
   });
   
-  // Добавление обработчика для кнопки очистки поиска
   const clearButton = document.getElementById('clear-search');
   clearButton.addEventListener('click', clearSearch);
   
-  // Инициализация состояния кнопки очистки
   toggleClearButton();
   
-  // Добавление обработчиков для кликабельных счетчиков статистики
   document.getElementById('filter-all').addEventListener('click', () => filterChampions('all', searchInput.value));
   document.getElementById('filter-played').addEventListener('click', () => filterChampions('played', searchInput.value));
   document.getElementById('filter-first').addEventListener('click', () => filterChampions('first', searchInput.value));
   document.getElementById('filter-not-played').addEventListener('click', () => filterChampions('not-played', searchInput.value));
   
-  // Добавление обработчиков для переключения языка
   document.getElementById('lang-ru').addEventListener('click', () => switchLanguage('ru'));
   document.getElementById('lang-en').addEventListener('click', () => switchLanguage('en'));
   
-  // Добавление обработчиков для модальных окон и кнопок
   document.getElementById('fetch-data-modal-btn').addEventListener('click', openFetchDataModal);
   document.getElementById('fetch-data-btn').addEventListener('click', fetchPlayerData);
   document.getElementById('api-key-btn').addEventListener('click', openApiKeyModal);
@@ -1614,7 +1533,6 @@ document.addEventListener('DOMContentLoaded', () => {
   document.querySelector('.close-fetch-modal').addEventListener('click', closeFetchDataModal);
   document.getElementById('save-api-key').addEventListener('click', saveApiKey);
   
-  // Закрытие модальных окон по клику вне их содержимого
   window.addEventListener('click', (event) => {
     const apiModal = document.getElementById('api-key-modal');
     const fetchModal = document.getElementById('fetch-data-modal');
@@ -1626,7 +1544,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
   
-  // Запрос API ключа, если он не настроен
   if (!riotApiKey) {
     updateApiStatus(translations[currentLanguage].no_api_key, 'error');
   }

@@ -2,15 +2,12 @@ const fs = require('fs');
 const { createCanvas } = require('canvas');
 const path = require('path');
 
-// Создаем канвас для иконки
 const canvas = createCanvas(256, 256);
 const ctx = canvas.getContext('2d');
 
-// Фон
 ctx.fillStyle = '#0a1428';
 ctx.fillRect(0, 0, 256, 256);
 
-// Внешний круг
 ctx.beginPath();
 ctx.arc(128, 128, 100, 0, Math.PI * 2);
 ctx.fillStyle = '#1e2328';
@@ -19,7 +16,6 @@ ctx.strokeStyle = '#c8aa6e';
 ctx.lineWidth = 5;
 ctx.stroke();
 
-// Галочка "играл"
 ctx.beginPath();
 ctx.moveTo(90, 128);
 ctx.lineTo(115, 160);
@@ -28,7 +24,6 @@ ctx.lineWidth = 12;
 ctx.strokeStyle = '#0a7e8c';
 ctx.stroke();
 
-// Звезда "первое место"
 ctx.fillStyle = '#c8aa6e';
 const spikes = 5;
 const outerRadius = 25;
@@ -60,8 +55,7 @@ ctx.lineTo(centerX, centerY - outerRadius);
 ctx.closePath();
 ctx.fill();
 
-// Сохраняем PNG иконку
 const buffer = canvas.toBuffer('image/png');
 fs.writeFileSync(path.join(__dirname, 'assets', 'icon.png'), buffer);
 
-console.log('Иконка успешно создана и сохранена в assets/icon.png'); 
+console.log('Icon saved to assets/icon.png');

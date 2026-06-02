@@ -1,17 +1,13 @@
-// Мобильная версия трекера чемпионов Arena для Android
-// Использует localStorage вместо файловой системы
-// и стандартные fetch API вместо Node.js модулей
+// Mobile build: localStorage instead of filesystem, fetch instead of Node.js modules
 
 let champions = [];
 let userChampionsData = {};
-let currentFilter = 'all'; // текущий выбранный фильтр
-let currentLanguage = 'ru'; // текущий язык интерфейса
-let riotApiKey = ''; // ключ Riot Games API
+let currentFilter = 'all';
+let currentLanguage = 'ru';
+let riotApiKey = '';
 
-// Карта соответствия ID чемпионов и их ключей в API
 let championIdMap = {};
 
-// Пороги для челенджей по чемпионам
 const championsChallengeThresholds = {
   "IRON": 8,
   "BRONZE": 15,
@@ -22,7 +18,6 @@ const championsChallengeThresholds = {
   "MASTER": 168
 };
 
-// Пороги для челенджей по первым местам
 const firstPlaceChallengeThresholds = {
   "IRON": 3,
   "BRONZE": 6,
@@ -33,10 +28,8 @@ const firstPlaceChallengeThresholds = {
   "MASTER": 60
 };
 
-// Порядок рангов для сравнения
 const rankOrder = ["IRON", "BRONZE", "SILVER", "GOLD", "PLATINUM", "DIAMOND", "MASTER"];
 
-// Словари для переводов
 const translations = {
   ru: {
     app_title: "Arena Champion Challenges Tracker",
@@ -82,7 +75,6 @@ const translations = {
     page: "Страница",
     rate_limit_exceeded: "Превышен лимит запросов, ожидание",
     api_key_error: "Ошибка API ключа",
-    // Добавляем названия рангов
     rank_iron: "ЖЕЛЕЗО",
     rank_bronze: "БРОНЗА",
     rank_silver: "СЕРЕБРО",
@@ -135,7 +127,6 @@ const translations = {
     page: "Page",
     rate_limit_exceeded: "Rate limit exceeded, waiting",
     api_key_error: "API key error",
-    // Adding rank names
     rank_iron: "IRON",
     rank_bronze: "BRONZE",
     rank_silver: "SILVER",
@@ -146,7 +137,6 @@ const translations = {
   }
 };
 
-// Получение перевода ранга с запасным вариантом
 function getRankTranslation(rank) {
   if (!rank) return '';
   
@@ -154,16 +144,13 @@ function getRankTranslation(rank) {
   return translations[currentLanguage][translationKey] || rank;
 }
 
-// Функция для получения данных о чемпионах с DataDragon API
 function fetchChampionsData() {
   return new Promise((resolve, reject) => {
-    // Получаем последнюю версию API
     fetch('https://ddragon.leagueoflegends.com/api/versions.json')
       .then(response => response.json())
       .then(versions => {
         const latestVersion = versions[0];
         
-        // Получаем данные о чемпионах в зависимости от текущего языка
         const langCode = currentLanguage === 'ru' ? 'ru_RU' : 'en_US';
         
         fetch(`https://ddragon.leagueoflegends.com/cdn/${latestVersion}/data/${langCode}/champion.json`)
@@ -176,13 +163,11 @@ function fetchChampionsData() {
                 image: `https://ddragon.leagueoflegends.com/cdn/img/champion/splash/${champion.id}_0.jpg`
               };
             });
-            // Сортируем чемпионов по имени
             champsList.sort((a, b) => a.name.localeCompare(b.name, currentLanguage === 'ru' ? 'ru' : 'en'));
             resolve(champsList);
           })
           .catch(error => {
             console.error('Ошибка при обработке данных о чемпионах:', error);
-            // Используем упрощенный список в случае ошибки
             resolve(getFallbackChampions());
           });
       })
@@ -193,7 +178,6 @@ function fetchChampionsData() {
   });
 }
 
-// Резервный список чемпионов (используется при отсутствии соединения)
 function getFallbackChampions() {
   if (currentLanguage === 'ru') {
     const list = [
@@ -205,7 +189,6 @@ function getFallbackChampions() {
       { id: 'yasuo', name: 'Ясуо', image: 'https://ddragon.leagueoflegends.com/cdn/img/champion/splash/Yasuo_0.jpg' },
       { id: 'zed', name: 'Зед', image: 'https://ddragon.leagueoflegends.com/cdn/img/champion/splash/Zed_0.jpg' }
     ];
-    // Сортируем резервный список по имени
     return list.sort((a, b) => a.name.localeCompare(b.name, 'ru'));
   } else {
     const list = [
@@ -217,12 +200,10 @@ function getFallbackChampions() {
       { id: 'yasuo', name: 'Yasuo', image: 'https://ddragon.leagueoflegends.com/cdn/img/champion/splash/Yasuo_0.jpg' },
       { id: 'zed', name: 'Zed', image: 'https://ddragon.leagueoflegends.com/cdn/img/champion/splash/Zed_0.jpg' }
     ];
-    // Сортируем резервный список по имени
     return list.sort((a, b) => a.name.localeCompare(b.name, 'en'));
   }
 }
 
-// Загрузка данных пользователя из localStorage
 function loadUserData() {
   try {
     console.log('Загрузка данных из localStorage');
@@ -230,13 +211,11 @@ function loadUserData() {
     if (data) {
       userChampionsData = JSON.parse(data);
       
-      // Загружаем сохраненный язык, если есть
       if (userChampionsData._settings && userChampionsData._settings.language) {
         currentLanguage = userChampionsData._settings.language;
         updateLanguageBtns();
       }
       
-      // Загружаем API ключ, если он сохранен
       if (userChampionsData._settings && userChampionsData._settings.apiKey) {
         riotApiKey = userChampionsData._settings.apiKey;
       }
@@ -251,17 +230,14 @@ function loadUserData() {
   }
 }
 
-// Сохранение данных пользователя в localStorage
 function saveUserData() {
   try {
-    // Сохраняем настройки вместе с данными
     if (!userChampionsData._settings) {
       userChampionsData._settings = {};
     }
     userChampionsData._settings.language = currentLanguage;
     userChampionsData._settings.apiKey = riotApiKey;
     
-    // Сохраняем данные в localStorage
     localStorage.setItem('championData', JSON.stringify(userChampionsData));
     console.log('Данные сохранены в localStorage');
   } catch (error) {
@@ -269,27 +245,22 @@ function saveUserData() {
   }
 }
 
-// Расчет ранга и прогресса для челенджа
 function calculateRankAndProgress(count, thresholds) {
-  // Определяем текущий ранг
   let currentRank = "IRON";
   let nextRank = "BRONZE";
   let progress = 0;
   
-  // Проходим по всем рангам в порядке возрастания
   for (let i = rankOrder.length - 1; i >= 0; i--) {
     const rank = rankOrder[i];
     const threshold = thresholds[rank];
     
     if (count >= threshold) {
       currentRank = rank;
-      // Если это последний ранг, то следующего нет
       nextRank = i === rankOrder.length - 1 ? null : rankOrder[i + 1];
       break;
     }
   }
   
-  // Рассчитываем прогресс до следующего ранга
   if (nextRank) {
     const currentThreshold = thresholds[currentRank];
     const nextThreshold = thresholds[nextRank];
@@ -298,7 +269,6 @@ function calculateRankAndProgress(count, thresholds) {
     progress = 1 - (remaining / total);
     progress = Math.max(0, Math.min(1, progress));
   } else {
-    // Если достигнут максимальный ранг
     progress = 1;
   }
   
@@ -311,34 +281,26 @@ function calculateRankAndProgress(count, thresholds) {
   };
 }
 
-// Обновление отображения рангов и прогресса
 function updateRanksDisplay() {
-  // Получаем количество играных и первое место чемпионов
   const playedCount = Object.values(userChampionsData).filter(champion => champion.played).length;
   const firstCount = Object.values(userChampionsData).filter(champion => champion.first).length;
   
-  // Рассчитываем ранги и прогресс
   const playedRankInfo = calculateRankAndProgress(playedCount, championsChallengeThresholds);
   const firstRankInfo = calculateRankAndProgress(firstCount, firstPlaceChallengeThresholds);
   
-  // Обновляем элементы на странице
   const playedRankElement = document.getElementById('played-rank');
   const playedProgressElement = document.getElementById('played-progress');
   const firstRankElement = document.getElementById('first-rank');
   const firstProgressElement = document.getElementById('first-progress');
   
-  // Переводим ранги и обновляем элементы
   const playedRankTranslated = getRankTranslation(playedRankInfo.rank);
   const firstRankTranslated = getRankTranslation(firstRankInfo.rank);
   
-  // Обновляем ранги
   playedRankElement.textContent = playedRankTranslated;
-  playedRankElement.setAttribute('data-rank', playedRankInfo.rank); // Оставляем оригинальное имя для CSS
+  playedRankElement.setAttribute('data-rank', playedRankInfo.rank);
   
   firstRankElement.textContent = firstRankTranslated;
-  firstRankElement.setAttribute('data-rank', firstRankInfo.rank); // Оставляем оригинальное имя для CSS
-  
-  // Обновляем прогресс-бары
+  firstRankElement.setAttribute('data-rank', firstRankInfo.rank);
   const playedProgressBar = document.getElementById('played-progress-bar');
   const playedProgressText = document.getElementById('played-progress-text');
   const firstProgressBar = document.getElementById('first-progress-bar');
@@ -352,14 +314,11 @@ function updateRanksDisplay() {
     return;
   }
   
-  // Обновляем информацию о прогрессе для "играл"
   if (playedRankInfo.nextRank) {
-    // Получаем перевод для следующего ранга
     const nextRankTranslated = getRankTranslation(playedRankInfo.nextRank);
     const nextRankText = translations[currentLanguage].next_rank.replace('{rank}', nextRankTranslated);
     playedProgressElement.textContent = `${nextRankText} ${playedRankInfo.remaining}`;
     
-    // Обновляем визуальный прогресс-бар
     const currentThreshold = championsChallengeThresholds[playedRankInfo.rank];
     const nextThreshold = championsChallengeThresholds[playedRankInfo.nextRank];
     const progressPercent = Math.min(100, (playedCount - currentThreshold) / (nextThreshold - currentThreshold) * 100);
@@ -375,20 +334,15 @@ function updateRanksDisplay() {
     });
   } else {
     playedProgressElement.textContent = translations[currentLanguage].rank_completed;
-    
-    // Если челлендж завершен, показываем 100% в прогресс-баре
     playedProgressBar.style.width = '100%';
     playedProgressText.textContent = translations[currentLanguage].rank_completed;
   }
   
-  // Обновляем информацию о прогрессе для "первое место"
   if (firstRankInfo.nextRank) {
-    // Получаем перевод для следующего ранга
     const nextRankTranslated = getRankTranslation(firstRankInfo.nextRank);
     const nextRankText = translations[currentLanguage].next_rank.replace('{rank}', nextRankTranslated);
     firstProgressElement.textContent = `${nextRankText} ${firstRankInfo.remaining}`;
     
-    // Обновляем визуальный прогресс-бар
     const currentThreshold = firstPlaceChallengeThresholds[firstRankInfo.rank];
     const nextThreshold = firstPlaceChallengeThresholds[firstRankInfo.nextRank];
     const progressPercent = Math.min(100, (firstCount - currentThreshold) / (nextThreshold - currentThreshold) * 100);
@@ -401,31 +355,25 @@ function updateRanksDisplay() {
       style: firstProgressBar.style.width
     });
     
-    // Принудительное обновление стиля ширины прогресс-бара
-    firstProgressBar.style.width = '0%'; // Сначала сбрасываем
+    // Force reflow so width transition applies reliably
+    firstProgressBar.style.width = '0%';
     setTimeout(() => {
-      firstProgressBar.style.width = `${progressPercent}%`; // Затем устанавливаем новое значение
+      firstProgressBar.style.width = `${progressPercent}%`;
       firstProgressText.textContent = `${firstCount}/${nextThreshold}`;
     }, 10);
   } else {
     firstProgressElement.textContent = translations[currentLanguage].rank_completed;
-    
-    // Если челлендж завершен, показываем 100% в прогресс-баре
     firstProgressBar.style.width = '100%';
     firstProgressText.textContent = translations[currentLanguage].rank_completed;
   }
   
-  // Обновляем цвета прогресс-баров в зависимости от ранга
   updateProgressBarColors(playedProgressBar, playedRankInfo.rank);
   updateProgressBarColors(firstProgressBar, firstRankInfo.rank);
 }
 
-// Обновление цветов прогресс-баров в зависимости от ранга
 function updateProgressBarColors(progressBar, rank) {
-  // Удаляем предыдущие классы цветов
   progressBar.classList.remove('rank-iron', 'rank-bronze', 'rank-silver', 'rank-gold', 'rank-platinum', 'rank-diamond', 'rank-master');
   
-  // Применяем соответствующий цвет
   switch (rank) {
     case 'IRON':
       progressBar.style.background = 'linear-gradient(90deg, #515151 0%, #6e6e6e 100%)';
