@@ -35,7 +35,16 @@ jobs:
             exit 1
           fi
 
-      - name: Build and publish
-        run: npm run build:release
+      - name: Build
+        run: npx electron-builder --win nsis portable -p never
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CSC_IDENTITY_AUTO_DISCOVERY: false
+
+      - name: Publish to GitHub Releases
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/*.exe
+            dist/*.blockmap
+          generate_release_notes: true
+          fail_on_unmatched_files: true

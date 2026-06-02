@@ -2,8 +2,6 @@
 
 A Windows desktop app for tracking League of Legends **Arena** champion progress: mark champions you've played and those you've won with, follow challenge ranks, and optionally import stats from the Riot Games API.
 
-> **Android version is in development**
-
 <p align="center">
   <img src="assets/Screenshot.jpg" alt="Arena Champion Challenges Tracker — champion grid, challenge progress, and filters" width="800">
 </p>

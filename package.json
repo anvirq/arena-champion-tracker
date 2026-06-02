@@ -8,7 +8,6 @@
     "build": "electron-builder --win nsis portable",
     "build:installer": "electron-builder --win nsis",
     "build:portable": "electron-builder --win portable",
-    "build:release": "electron-builder --win nsis portable --publish always",
     "build:web": "mkdir -p www && cp -r index-mobile.html style.css renderer-mobile.js assets www/ && mv www/index-mobile.html www/index.html && mv www/renderer-mobile.js www/renderer.js",
     "cap:init": "npm run build:web && npx cap init ArenaChampionTracker com.arenachampiontracker.app --web-dir www",
     "cap:add": "npx cap add android",
@@ -75,11 +74,6 @@
     },
     "portable": {
       "artifactName": "${productName}-${version}-portable.${ext}"
-    },
-    "publish": {
-      "provider": "github",
-      "owner": "anvirq",
-      "repo": "arena-champion-tracker"
     }
   }
 }
