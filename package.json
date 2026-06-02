@@ -1,6 +1,6 @@
 {
   "name": "arena-champion-tracker",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Arena Champion Challenges Tracker",
   "main": "main.js",
   "scripts": {
